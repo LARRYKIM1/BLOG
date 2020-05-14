@@ -1,2 +1,6 @@
-# Initial page
+---
+description: 공부한 내용을 정리하였습니다.
+---
+
+# 김유철의 블로그
 
