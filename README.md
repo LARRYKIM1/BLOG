@@ -1,1 +1,2 @@
-# BLOG
+# Initial page
+
