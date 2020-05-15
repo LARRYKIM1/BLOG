@@ -16,6 +16,7 @@
 ## 대학원 <a id="undefined-1"></a>
 
 * [Desinging Data-Intensive Application](undefined-1/desinging-data-intensive-application/README.md)
+  * [\#Glossary 용어정리](undefined-1/desinging-data-intensive-application/glossary.md)
   * [\#01 신뢰성, 확장성 그리고 유지보수성](undefined-1/desinging-data-intensive-application/1.md)
   * [\#02 데이터 모델과 쿼리 언어](undefined-1/desinging-data-intensive-application/2.md)
   * [\#03 저장과 검색](undefined-1/desinging-data-intensive-application/3-2.md)
