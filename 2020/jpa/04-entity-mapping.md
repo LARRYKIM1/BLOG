@@ -1,12 +1,10 @@
 ---
-description: 본 위키는 자바 ORM표준 JPA 프로그래밍 책을 읽고 작성하였습니다.
+description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정리한 내용입니다.
 ---
 
-# \#04 엔티티 매핑
+# \#04 엔티티 매핑 - 발표
 
 ## 엔티티 매핑 \(121페이지\)
-
-
 
 JPA를 사용하는데 **가장 중요한 일은 엔티티와 테이블을 정확히 매핑**하는 것. 따라서 매핑 **어노테이션을 숙지**하고 사용해야 한다.
 
@@ -578,13 +576,17 @@ JPA가 엔티티 데이터에 접근하는 방식을 지정한다.
 
 * 프로퍼티 접근
 
-  \`\`\`java @Entity public class Member { @Id private String id;
+```java
+@Entity public class Member { @Id private String id;
+@Transient private String firstName;
+@Transient private String lastName;
+@Access(AccessType.PROPERTY) //프로퍼티 접근 방식을 사용 
+public String getFullName() { 
+    return firstName + lastName; // 엔티티를 저장하면 회원 테이블의 FULLNAME 컬럼에 firstName + lastName의 결과가 저장 } . . . 
+}
+```
 
-  @Transient private String firstName;
 
-  @Transient private String lastName;
-
-@Access\(AccessType.PROPERTY\) //프로퍼티 접근 방식을 사용 public String getFullName\(\) { return firstName + lastName; // 엔티티를 저장하면 회원 테이블의 FULLNAME 컬럼에 firstName + lastName의 결과가 저장 } . . . }
 
 ```text
 <br/>
