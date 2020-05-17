@@ -48,4 +48,7 @@
   * [\#15](undefined-1/software-engineering/15.md)
   * [\#16](undefined-1/software-engineering/16.md)
   * [\#17](undefined-1/software-engineering/17.md)
+* [Effective Java](effective-java/README.md)
+  * [\# 01 객체들을 생성하고 파괴해보기](effective-java/01.md)
+  * [\# 02](effective-java/02.md)
 

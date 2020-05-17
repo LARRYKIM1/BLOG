@@ -15,7 +15,7 @@ description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정
 
 ## 생명주기
 
-![](../../.gitbook/assets/image%20%286%29.png)
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../.gitbook/assets/image%20%2816%29.png)
 
 **비영속 - 객체만 생성하고 아직 영속성컨택스트에 저장하지 않음.**
 
