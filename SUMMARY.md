@@ -5,7 +5,7 @@
 ## 스터디 모임 <a id="2020"></a>
 
 * [JPA](2020/jpa/README.md)
-  * [\#03 \[실습\] 영속성 관리](2020/jpa/03-jpa.md)
+  * [\#03 영속성 관리](2020/jpa/03-jpa.md)
   * [\#04 엔티티 매핑 - 발표](2020/jpa/04-entity-mapping.md)
   * [\#05 연관관계 매핑 기초](2020/jpa/undefined.md)
   * [\#06 다양한 연관관계 매핑](2020/jpa/2/README.md)
