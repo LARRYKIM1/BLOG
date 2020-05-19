@@ -13,14 +13,15 @@
   * [\#07 프록시와 연관관계 관리](2020/jpa/1.md)
   * [\#08 고급 매핑](2020/jpa/08.md)
   * [\#09 값 타입](2020/jpa/09.md)
-  * [\#10 객체지향 쿼리 언어 - 발표](2020/jpa/10.md)
+  * [\#10 객체지향 쿼리 언어 - 발표](2020/jpa/10/README.md)
+    * [\#10 실습](2020/jpa/10/10.md)
 
 ## 대학원 <a id="undefined-1"></a>
 
 * [Desinging Data-Intensive Application](undefined-1/desinging-data-intensive-application/README.md)
   * [\#Glossary 용어정리](undefined-1/desinging-data-intensive-application/glossary.md)
-  * [\#01 신뢰성, 확장성 그리고 유지보수성](undefined-1/desinging-data-intensive-application/1.md)
-  * [\#02 데이터 모델과 쿼리 언어](undefined-1/desinging-data-intensive-application/2.md)
+  * [\# 1장 신뢰성, 확장성 그리고 유지보수성](undefined-1/desinging-data-intensive-application/1.md)
+  * [\# 2장 데이터 모델과 쿼리 언어](undefined-1/desinging-data-intensive-application/2.md)
   * [\#03 저장과 검색](undefined-1/desinging-data-intensive-application/3-2.md)
   * [\#04 인코딩과 진화](undefined-1/desinging-data-intensive-application/4-2.md)
   * [\#05 복제](undefined-1/desinging-data-intensive-application/05.md)
