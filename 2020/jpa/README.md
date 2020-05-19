@@ -6,6 +6,16 @@ description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정
 
 [1장 ](https://foflzla12.gitbook.io/larrykim-blog/2020/jpa/03-jpa)
 
+2장
+
+3장
+
+[4장 ](https://foflzla12.gitbook.io/larrykim-blog/2020/jpa/undefined)
+
+
+
+{% page-ref page="./" %}
+
 {% page-ref page="./" %}
 
 
