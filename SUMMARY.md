@@ -18,6 +18,9 @@
 
 ## 대학원 <a id="undefined-1"></a>
 
+* [Clean Code](undefined-1/clean-code/README.md)
+  * [\# 1장 깨끗한 코드](undefined-1/clean-code/1.md)
+  * [\# 2장 의미있는 이름](undefined-1/clean-code/2.md)
 * [Desinging Data-Intensive Application](undefined-1/desinging-data-intensive-application/README.md)
   * [\#Glossary 용어정리](undefined-1/desinging-data-intensive-application/glossary.md)
   * [\# 1장 신뢰성, 확장성 그리고 유지보수성](undefined-1/desinging-data-intensive-application/1.md)
