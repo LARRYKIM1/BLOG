@@ -1,4 +1,8 @@
-# Clean Code
+---
+description: >-
+  Robert C. Martin 저 "Clean Code: A Handbook of Agile Software Craftsmanship"을
+  읽고 정리한 내용입니다.
+---
 
-[https://book.naver.com/bookdb/book\_detail.nhn?bid=7390287](https://book.naver.com/bookdb/book_detail.nhn?bid=7390287)
+# Clean Code
 
