@@ -70,11 +70,11 @@ SELECT username FROM Member m; -- X
 **TypeQuery 예제**
 
 ```java
-TypedQuery<Meniber> query = 
+TypedQuery<Member> query = 
                   em.createQuery ("SELECT m FROM Member m" , Member.class) ;
 List<Member> resultList = query.getResultList();
 for (Member member : resultList) {
-   System.out.printin("member = ” + member);
+   System.out.println("member = " + member);
 }
 ```
 
