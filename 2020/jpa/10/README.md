@@ -304,7 +304,6 @@ from Member m
 1. 리턴값 타입은?
 - AVG(m.age) // long, int, double?
 - COUNT(m) // long, int, double?
-- SUM(
 
 2. 아래와 같은 함수가 사용될수 있을까? 
 //주문테이블 주문날짜 컬
@@ -314,12 +313,10 @@ from Member m
 
 | 함수 | 설명 |
 | :--- | :--- |
-| COUNT | 결과 수를 구한다. **반환 타입: Long** |
+| COUNT | 결과 수를 구한다. **반환 타입: Long** // int로 받으니 형변환 에러 |
 | MAX, MIN | 최대, 최소 값을 구한다. 문자, 숫자, **날짜** 등에 사용한다. |
 | AVG | 평균값을 구한다. 숫자타입만 사용할 수 있다. **반환 타입: Double** |
 | SUM | 합을 구한다. 숫자타입만 사용할 수 있다. 반환 타입: 정수합 Long, 소수합: Double, Biginteger합: Biginteger, BigDecimal합: BigDecimal |
-
-\*\*\*\*
 
 **참고사항**
 
@@ -329,23 +326,47 @@ from Member m
 
 **GROUP BY, HAVING**
 
+**팀 테이블**
+
+| **id** | team\_name |
+| :--- | :--- |
+| 1 | 팀1 |
+| 2 | 팀2 |
+| 3 | 팀3 |
+
+**멤버 테이블**
+
+| id | name | age | team\_id |
+| :--- | :--- | :--- | :--- |
+| 1 | 멤버1 | 11 | 1 |
+| 2 | 멤버2 | 12 | 2 |
+| 3 | 멤버3 | 13 | 3 |
+| 4 | 멤버4 | 14 | 1 |
+| 5 | 멤버5 | 15 | 2 |
+| 6 | 멤버6 | 16 | 3 |
+
 * 팀 이름을 기준으로 그룹별로 묶어서 통계
 
-  ```sql
-  SELECT t.name, COUNT(m.age), SUM(m.age), AVG(m.age), MAX(m.age), MIN(m.age)
-  FROM Member m LEFT JOIN m.team t
-  GROUP BY t.name
-  ```
+```sql
+SELECT t.name, COUNT(m.age), SUM(m.age), AVG(m.age), MAX(m.age), MIN(m.age)
+FROM Member m LEFT JOIN m.team t
+GROUP BY t.name
+
+// 결과
+// 팀1, 2, 11+14, 12.5, 14, 11
+// 팀2, 2, 12+15, 13.5, 15, 12
+// 팀3, 2, 13+16, 14.5, 16, 13
+```
 
 * 그룹별 통계 데이터 중에서 평균나이가 10살 이상인 그룹을 조회
 
-  ```sql
-  SELECT t.name, COUNT( m.age ), SUM( m.age ), AVG( m.age ), MAX( m.age ), MIN(m.age)
-  FROM 
-   Member m LEFT JOIN m.team t
-  GROUP BY t.name
-  HAVING AVG(m.age) >= 10
-  ```
+```sql
+SELECT t.name, COUNT( m.age ), SUM( m.age ), AVG( m.age ), MAX( m.age ), MIN(m.age)
+FROM 
+    Member m LEFT JOIN m.team t
+GROUP BY t.name
+HAVING AVG(m.age) >= 10
+```
 
 * 보통 전체 데이터를 기준으로 처리하므로 실시간으로 사용하기엔 부담
 * 사용자가 적은 새벽에 통계 쿼리를 실행
@@ -354,12 +375,12 @@ from Member m
 
 * 결과를 정렬
 
-  ```sql
-  SELECT t.name, COUNT(m.age) as ent
-  FROM Member m LEFT JOIN m.team t
-  GROUP BY t.name
-  ORDER BY ent
-  ```
+```sql
+SELECT t.name, COUNT(m.age) as ent
+FROM Member m LEFT JOIN m.team t
+GROUP BY t.name
+ORDER BY ent
+```
 
 ### 10.2.6 JPQL 조인 - JPQL
 
@@ -376,7 +397,7 @@ SELECT count(m) FROM Member m, Team t WHERE m.username = t.name
 
 ```java
 String teamName = "팀A";
-String query = "여기 원하는 조인 쿼리를 넣는다." 
+String query = "조인 쿼리 생략" 
                      + "WHERE t.name = :teamName";
 List<Member> members = em.createQuery(query, Member.class)
                         .setParameter("teamName", teamName)
@@ -407,23 +428,23 @@ SELECT m FROM Member m JOIN FETCH m.team
 
 **페치 조인과 DISTINCT**
 
-Q. distinct는 컬렉션 패치조인하고 꼭 가이 써야 하는가?
+Q. distinct는 컬렉션 패치조인하고 꼭 같이 써야 하는가?
 
 **페치 조인의 특징과 한계**
 
 * 특징
   * 페치 조인은 글로벌 로딩 전략보다 우선한다\(`@0neToMany(fetch = FetchType.LAZY)` //글로벌 로딩 전략\)
   * 글로벌 로딩 전략을 지연 로딩으로 설정해도 JPQL에서 페치 조인을 사용하면 페치 조인을 적용해서 함께 조회
-  * 따라서 지연 로딩을 사용하고 최적화가 필요하면 페치 조인을 적용하는 것이 효과적
+  * 따라서 지연 로딩을 사용하고, 경우에 따라 EAGER로딩이 필요할 경우, 최적화를 위해 페치 조인을 적용하는 것이 효과적
 * 한계
-  * 페치 조인 대상에는 별칭을 줄 수 없다. 따라서 SELECT, WHERE 절，서브 쿼리에 페치 조인 대상을 사용할 수 없다. \(하이버네이트는 지원\)
+  * 페치 조인 대상에는 별칭을 줄 수 없다. 따라서 SELECT, WHERE 절, 서브 쿼리에 페치 조인 대상을 사용할 수 없다. \(하이버네이트는 지원\) 예를들어, 위 페치조인대상인 팀의 컬럼으로 where절에서 사용불가.
   * 둘 이상의 컬렉션을 페치할 수 없다. 카테시안 곱이 만들어지므로 주의. 
   * 컬렉션을 페치 조인하면 페이징 API（setFirstResult, setMaxResults）를 사용할 수 없다. 컬렉션\(일대다\)이 아닌 단일 값 연관 필드（일대일，다대일）들은 페치 조인을 사용해도 페이징 API를 사용할 수 있다.
 
 **페치조인 정리**
 
 * 페치 조인은 실무에서 자주 사용 
-* 객체 그래프를 유지할 때 사용하면 효과적?
+* 객체 그래프를 유지할 때 사용하면 효과적. 멤버-&gt;팀.
 * 여러 테이블을 조인해서 엔티티가 가진 모양이 아닌 전혀 다른 결과를 내야 하다면 억지로 페치 조인을 사용하기보다는 여러 테이블에서 필요한 필드들만 조회해서 DTO로 반환하는 것이 더 효과적일 수 있다.
 
 ### 10.2.8 경로표현식 - JPQL
@@ -491,25 +512,25 @@ SELECT m.name, m.age FROM Member m
 **단일 값 연관 경로**
 
 ```sql
-JPQL - 단일 값 연관 경로
+//JPQL - 단일 값 연관 경로
 SELECT o.member FROM Order o -- order:member N:1
-SQL - 단일 값 연관 경로
-SELECT m.*
-FROM Orders o INNER JOIN Member m on o.member_id=m.id
+//SQL - 단일 값 연관 경로
+SELECT m.* FROM Orders o INNER JOIN Member m on o.member_id = m.id
 ```
 
-단일 값 연관 경로 실습 - 354p UML 참고
+단일 값 연관 경로 실습 - 354p UML 참고하기
 
 * **주문** 중에서 **상품명**이 'productA'고 **배송지**가 'JINJU'인 회원이 소속된 팀을 조회해보자.
 
 ```sql
-SELECT o.member.team
+SELECT o.member.team // 다대일->다대일 두깊이 다 단일값 연관 경로로 두번 조회가능
 FROM Order o
 WHERE o.product.name = 'productA' and o.address.city = 'JINJU'
+// o.product.name 다대일인 단일값 연관 경로로 .name 처럼 탐색가능
 ```
 
 * 문제 - 위에는 명시적일까? 묵시적걸까?
-  * o.member.tea와 같이 경로탐색을 사용했기에 묵시적이다.
+  * o.member.team와 같이 경로탐색을 사용했기에 묵시적이다.
 * 문제 - 위 쿼리는 몇번의 조인이 일어날까?
   * 3번 조인 - 아래 참고 
 
@@ -517,18 +538,18 @@ WHERE o.product.name = 'productA' and o.address.city = 'JINJU'
 // 실행된 SQL
 SELECT t.*
 FROM Orders o
-INNER JOIN Member m ON o.member_id=m.id
-INNER JOIN Team t ON m.team_id=t.id
-INNER JOIN Product p ON o.product_id=p.id
+    INNER JOIN Member m ON o.member_id=m.id
+    INNER JOIN Team t ON m.team_id=t.id
+    INNER JOIN Product p ON o.product_id=p.id
 WHERE p.name='productA' AND o.city='JINJU'
 ```
 
 #### 컬렉션 값 연관 경로 탐색
 
-* 컬렉션 값에서 경로 탐색을 시도하는 실수를 많이 한다.
+* 컬렉션 값에서 경로 탐색을 시도하는 실수를 하지말자.
 
 ```sql
-SELECT t.members FROM Team t //성공
+SELECT t.members FROM Team t //성공 
 SELECT t.members.username FROM Team t //실패
 ```
 
@@ -550,7 +571,7 @@ SELECT t.members.size FROM Team t
 
 경로 탐색을 사용하면 묵시적 조인이 발생해서 SQL에서 내부 조인이 일어난다.
 
-* 항상 내부 조인이다.
+* 항상 내부 조인이다. `SELECT t.members FROM Team t` 에서 '팀1'에 멤버가 없으면 결과에서 제외됨.
 * 컬렉션은 경로 탐색의 끝이다. 컬렉션에서 경로 탐색을 하려면 명시적으로 조인해서 별칭을 얻어야 한다.
 * 경로 탐색은 주로 SELECT, WHERE 절 \(다른 곳에서도 사용됨\)에서 사용하지만 묵시적 조인으로 인해 SQL의 FROM 절에 영향을 준다.
 
@@ -563,7 +584,7 @@ SELECT t.members.size FROM Team t
 * SELECT, FROM 절에서는 사용 X
 
 ```sql
-나이가 평균보다 많은 회원 찾는 쿼리 
+//나이가 평균보다 많은 회원 찾는 쿼리 
 SELECT m FROM Member m
 WHERE m.age > (SELECT avg(m2.age) FROM Member m2)
 ```
@@ -591,7 +612,7 @@ SELECT m FROM Member m WHERE m.orders.size > 0
 요구 - 서브쿼리 사용하고 EXISTS 사용
 
 SELECT m FROM Member m
-WHERE EXISTS (SELECT t FROM  m.team t WHERE t.name = '팀A*)
+WHERE EXISTS (SELECT t FROM  m.team t WHERE t.name = '팀A')
 ```
 
 ```sql
@@ -623,6 +644,7 @@ WHERE t IN (SELECT t2 From Team t2 JOIN t2.members m2 WHERE m2.age >= 20)
 ```sql
 문제 - WHERE절의 like 조건에서 '회원%'는 회원1, 회원ABC같은 것을 찾아낸다. 
        그럼 '회원%'와 같이 진짜 특수문자는 어떻게 찾을까?
+
 
 WHERE m.username LIKE '회원\%' ESCAPE '\'
 ```
@@ -658,6 +680,7 @@ WHERE m.orders IS NULL
 
 **컬렉션 멤버식**
 
+문법 : { 엔티티나 값} \[NOT\] MEMBER \[OF\] { 컬렉션값 연관 경로 }  
 매개변수로 받은 멤버가 속한 팀을 컬렉션의 멤버식을 이용해 찾아보자.
 
 ```sql
@@ -676,7 +699,7 @@ WHERE :memberParam member of t.members
   LOCATE('DE', 'ABCDEFG') = 답은?
   ```
 
-* 수학함수: ABC, SQRT, MOD, SIZE, INDEX
+* 수학함수: ABS, SQRT, MOD, SIZE, INDEX
 * 날짜함수: CURRENT\_DATE, CURRENT\_TIME, CURRENT\_TIMESTAMP
 
 하이버네이트에서는 아래 기능 지원
@@ -689,7 +712,7 @@ FROM Member
 **CASE 식**
 
 ```sql
-멤버의 나이가 10세 이하면 '학생요금' 60세 이상이면 '경로요금'
+// 멤버의 나이가 10세 이하면 '학생요금' 60세 이상이면 '경로요금'
 1. 기본 CASE
 SELECT 
    CASE WHEN m.age <= 10 THEN '학생요금'
@@ -698,7 +721,7 @@ SELECT
    END
 FROM Member m
 
-팀A일 경우 인센티브 110, 팀B일 경우 120, 이외에는 105
+// 팀A일 경우 인센티브 110, 팀B일 경우 120, 이외에는 105
 2. 심플 CASE
 SELECT 
    CASE t.name
@@ -708,11 +731,11 @@ SELECT
    END
 FROM Team t
 
-멤버의 이름값이 NULL이면 '이름 없는 회원'을 반환 
+// 멤버의 이름값이 NULL이면 '이름 없는 회원'을 반환 
 3. COALEASCE
 SELECT COALESCE(m.username, '이름 없는 회원') FROM Member m
 
-관리자면 NULL을 반환하고 나머지는 본인의 이름 반환 
+// 관리자면 NULL을 반환하고 나머지는 본인의 이름 반환 
 4. NULLIF
 SELECT NULLIF(m.username, '관리자') FROM Member m
 ```
@@ -740,7 +763,7 @@ public class Book extends Item {
 List resultList = em.createQuery("select i from Item i").getResultList();
 ```
 
-위 실행시 두가지 전략\(단일테이블, 조인\)을 사용할때 SQL이 다음과 같이 나온다.
+위 실행시 두가지 전략\(단일테이블, 조인\)을 사용할때 각각 SQL이 다음과 같이 나온다.
 
 ```sql
 // InheritanceType.SINGLE_TABLE 때 SQL
@@ -774,7 +797,7 @@ SELECT i FROM Item i
 WHERE i.DTYPE in ('B', 'M')
 ```
 
-TREAT - 자바의 타입 캐스팅과 비슷하며 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용한다. 부모 타입인 Item을 자식 타입인 Book으로 다룬다. 따라서 author 필드에 접근할 수 있다.
+`TREAT` - 자바의 타입 캐스팅과 비슷하며 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용한다. 부모 타입인 Item을 자식 타입인 Book으로 다룬다. 따라서 author 필드에 접근할 수 있다.
 
 ```sql
 //JPQL
