@@ -84,12 +84,12 @@ for (Member member : resultList) {
 
   ```java
   Query query =
-    em.createQuery (" SELECT m.username, m.age from Mennber m") ; 
+    em.createQuery (" SELECT m.username, m.age from Member m") ; 
   List resultList = query.getResultList();
   for (Object o : resultList) {
-  Object [] result = (Object []) o; //결과가둘 이상이면 Object [] 반환
-  System.out.printin("username = " + result[0]);
-  System.out.printin("age = " + result[1]);
+    Object [] result = (Object []) o; //결과가둘 이상이면 Object [] 반환
+    System.out.println("username = " + result[0]);
+    System.out.println("age = " + result[1]);
   }
   ```
 
@@ -104,7 +104,7 @@ for (Member member : resultList) {
 
 ```java
 // 이름 기준파라미터
-String usernameParam = "User1";
+String usernameParam = "멤1";
 TypedQuery<Member> query =
       em.createQuery("SELECT m FROM Member m where m.username = :username", Member.class);
 query.setParameter("username", usernameParam);
@@ -112,19 +112,20 @@ List<Member> resultList = query.getResultList();
 
 // 위치 기준파라미터
 List<Member> members =
-   em.createQuery("SELECT m FROM Member m where m.username = :username", Member.class)
-   .setParameter("username", usernameParam)
+   em.createQuery("SELECT m FROM Member m where m.username = ?1", Member.class)
+   .setParameter(1, usernameParam)
    .getResultList();
 ```
 
-* 이름 기준 파라미터 바인딩 방식을 사용하는 것이 더 명확
+* **이름 기준 파라미터 바인딩 방식을 사용**하는 것이 더 명확
 * SQL 인젝션 공격 대응책
   * 위험코드 "select m from Member m where m.username = '" + usernameParam + "'"
 
 ### 10.2.3  프로젝션 - JPQL
 
 * 조회할 대상을 지정하는 것
-* 프로젝션 대상인 3가지 엔티티，엠비디드 타입，스칼라 타입 그리고 3가지의 복합과 NEW 명령어에 대해 알아보자.
+* 프로젝션 대상인 3가지 엔티티, 임베비디드 타입, 스칼라 타입 그리고 3가지의 복합 
+* 위와 함께 NEW 명령어도 대해 알아보자.
 
 #### **엔티티**
 
@@ -143,7 +144,7 @@ List<Member> members =
 * 조회의 시작점이 될 수 없다는 제약
 
 ```java
-String query = "SELECT a FROM Address a";
+String query = "SELECT a FROM Address a"; // 임베디드 타입 
 String query = "SELECT o.address FROM Order o"; 
 
 List addresses = em.createQuery(query, Address.class).getResultList();
@@ -151,36 +152,36 @@ List addresses = em.createQuery(query, Address.class).getResultList();
 
 #### **스칼라** 
 
-* 숫자，문자，날짜와 같은 기본 데이터 타입
+* 숫자, 문자, 날짜와 같은 기본 데이터 타입
 
 ```java
-// 1
+// 1 문자 
 List<String> usernames = 
-                  em.createQuery("SELECT username FROM Member m", String.class)
-                  .getResultList();
+     em.createQuery("SELECT username FROM Member m", String.class)
+     .getResultList();
 
-// 2 통계쿼리
+// 2 숫자 - 통계쿼리 
 Double orderAmountAvg = 
-            em.createQuery("SELECT AVG(o.orderAmount) FROM Order o", Double.class)
-            .getSingleResult();
+        em.createQuery("SELECT AVG(o.orderAmount) FROM Order o", Double.class)
+       .getSingleResult();
 ```
 
 #### **여러값 조회**
 
 ```java
-// 1 
+// 1 문자 + 숫자 
 List<Object[]> resultList = 
-                        em.createQuery("SELECT m.username, m.age FROM Member m")
-                        .getResultList();
+         em.createQuery("SELECT m.username, m.age FROM Member m")
+         .getResultList();
 for (Object[] row : resultList) {
    String username = (String)row[0];
    Integer age = (Integer)row[1];
 }
 
-// 2 
+// 2 엔티티 + 숫자 
 List<Object[]> resultList =
-         em.createQuery("SELECT o.member, o.product, o.orderAmount FROM Order o")
-         .getResultList ();
+   em.createQuery("SELECT o.member, o.product, o.orderAmount FROM Order o")
+   .getResultList ();
 for (Object[] row : resultList) {
    Member member = (Member)row[0]; //엔티티
    Product product = (Product)row[1]; //엔티티
@@ -195,23 +196,25 @@ for (Object[] row : resultList) {
 * 실제 개발시 Object\[\] 직접 사용 X, UserDTO 처럼 의미 있는 객체로 변환해서 사용
 
 ```java
-//사용전 
-List resultList = em.createQuery("SELECT m.username, m.age FROM Member m")                  
-                 .getResultList();
+// 1 사용전 
+List resultList = 
+      em.createQuery("SELECT m.username, m.age FROM Member m")                  
+      .getResultList();
 
-//객체 변환 작업
-List userDTOs = new ArrayList();
+List<UserDTO> userDTOs = new ArrayList<UserDTO>();
 for (Object[] row : resultList) {
-   String username = (String) row[0];
-   Integer age = (Integer) row[1];
+      UserDTO userDTO = 
+                  new UserDTO((String)row[0], (Integer)row[1]);
+      userDTOs.add(userDTO);
 }
 return userDTOs;
 
-// 사용후 
+
+// 2 사용후 
 TypedQuery query = 
-            em.createQuery( 
-             "SELECT new jpabook.jpql.UserDTO(m.username, m.age) FROM Member m"
-            , UserDTO.class); 
+   em.createQuery( 
+    "SELECT new jpabook.jpql.UserDTO(m.username, m.age) FROM Member m"
+   , UserDTO.class); 
 List resultList = query.getResultList();
 ```
 
@@ -219,7 +222,7 @@ List resultList = query.getResultList();
 
 #### 주의사항
 
-1. 패키지 명을 포함한 전체 클래스 명을 입력해야 한다.      \(new jpabook.jpql.UserDTO\(m.username, m.age\)\)
+1. 패키지 명을 포함한 전체 클래스 명을 입력해야 한다.      new jpabook.jpql.UserDTO\(m.username, m.age\) -&gt; o      new UserDTO\(m.username, m.age\) -&gt; x
 2. 순서와 타입이 일치하는 생성자가 필요하다.
 
 ```java
@@ -252,7 +255,7 @@ FROM
 ORDER BY
    M.NAME DESC LIMIT ?, ?
  
- //오라클
+//오라클
 SELECT *
 FROM
 ( SELECT ROW_.*, ROWNUM ROWNUM_
@@ -290,20 +293,33 @@ query.getResultList();
 
 ```sql
 select
-   COUNT (m) , //회원수
+   COUNT(m) , //회원수
    SUM(m.age), //나이합
-   AVG(m.age), //의롸01
-   MAX (m.age), //최대 나이
-   MIN (m. age) //최소 나이
+   AVG(m.age), //평균 나이
+   MAX(m.age), //최대 나이
+   MIN(m.age) //최소 나이
 from Member m
+
+// 문제 
+1. 리턴값 타입은?
+- AVG(m.age) // long, int, double?
+- COUNT(m) // long, int, double?
+- SUM(
+
+2. 아래와 같은 함수가 사용될수 있을까? 
+//주문테이블 주문날짜 컬
+- AVG(ORDERS.orderdate) // 불가 
+- MAX(ORDERS.orderdate) // 가능 
 ```
 
 | 함수 | 설명 |
 | :--- | :--- |
-| COUNT | 결과 수를 구한다. 반환 타입: Long |
-| MAX, MIN | 최대, 최소 값을 구한다. 문자, 숫자, 날짜 등에 사용한다. |
-| AVG | 평균값을 구한다. 숫자타입만 사용할 수 있다. 반환 타입: Double |
+| COUNT | 결과 수를 구한다. **반환 타입: Long** |
+| MAX, MIN | 최대, 최소 값을 구한다. 문자, 숫자, **날짜** 등에 사용한다. |
+| AVG | 평균값을 구한다. 숫자타입만 사용할 수 있다. **반환 타입: Double** |
 | SUM | 합을 구한다. 숫자타입만 사용할 수 있다. 반환 타입: 정수합 Long, 소수합: Double, Biginteger합: Biginteger, BigDecimal합: BigDecimal |
+
+\*\*\*\*
 
 **참고사항**
 
