@@ -1021,6 +1021,8 @@ public @interface NamedQuery {
 
 ## 10.3 Criteria 쿼리
 
+JPA 표준으로 지원하지만 복잡하여 생략. QueryDSL 사용하기.
+
 ### 10.3.1 기초 - Criteria
 
 ### 10.3.2 쿼리 생성 - Criteria
@@ -1093,11 +1095,159 @@ public @interface NamedQuery {
 
 ### 10.6.1 벌크연산
 
+한 번에 여러 데이터 를 수정하는것.  
+재고가 10개 미만인 모든 상품의 가격을 10% 상승시키려면?
+
+**`.executeUpdate();`**
+
+```java
+String qlString =
+    "update Product p " +
+    "set p.price = p.price * 1.1 " +
+    "where p.stockAmount < :stockAmount";
+int resultcount = em.createQuery(qlString)
+                .setParameter("stockAmount", 10)
+                .executeUpdate();
+```
+
+가격이 100원 미만인 모든 상품을 삭제하려면?
+
+```java
+String qlString =
+                "delete from Product p " +
+                "where p.price < :price";
+int resultcount = em.createQuery(qlString)
+                .setParameter("price", 100)
+                .executeUpdate();
+```
+
+하이버네이트는 아래같이 대량 삽입\(INSERT\)도 가능
+
+```java
+String qlString =
+"insert into ProductTemp(id, name, price, stockAmount)" +
+"select p.id, p.name, p.price, p.stockAmount from Product p " +
+"where p.price < :price";
+int resultcount = em.createQuery(qlString)
+                .setParameter("price", 100)
+                .executeUpdate();
+```
+
+#### 벌크 연산의 주의사항
+
+영속성 컨텍스트를 무시하고 데이터베이스 에 직접 쿼리한다
+
+```java
+//상품A 조회(상품A의 가격은 1000원이다.)
+Product productA =
+    em.createQuery("select p from Product p where p.name = :name", Product.class);
+    .setParameter("name", "productA")
+    .getSingleResult();
+    
+//출력 결과: 1000
+System.out.println("productA 수정 전 = " + productA.getPrice());
+
+//벌크연산 수행으로 모든 상품 가격 10% 상승 
+em.createQuery("update Product p set p.price = p.price * 1.1")
+    .executeUpdate();
+        
+//출력 결과: 1000 -> 바뀐 db값 말고 캐시에 있는 사용
+System.out.println("productA 수정 후 = " + productA.getPrice());
+```
+
+#### 해결법 
+
+1. **em.refresh\(\)** -&gt; 데이터베이스에서 다시 조회
+2. **벌크 연산 먼저 실행** -&gt; 가장 실용적인 해결책
+3. **벌크 연산 수행 후 영속성 컨텍스트 초기화** -&gt; 영속성 컨텍스트에 남아 있는 엔티티를 제거하여 DB 조회하게 
+
 ### 10.6.2 영속성컨택스트와 JPQL
+
+* JPQL의 조회 대상 - **엔티티, 임베디드 타입, 값 타입**
+  * 3개중 엔티티만 영속성 컨택스트에서 관리되고, 임베디드랑 값타입은 변경 감지에 의한 수정이 발생하지 않는다.
+
+```sql
+select m from Member m //엔티티 관리o
+select o.address from Order o //임베디드타입 관리x
+select m.id, m.username from Member m //단순필드 관리x
+```
+
+```sql
+//이렇게 가져올경우 티티이므로 주문안에 address 임베디드타입도 
+// 수정(은?만?)가능하다. 
+select o from Order o
+// 임베디드 타입은 무조건 관리 안된다고 생각하면 되겠지...
+```
 
 ### 10.6.3 find\(\) vs JPQL
 
+```java
+//최초 조회, 데이터베이스에서조회
+Member member1 = em.find(Member.class, 1L);
+
+//두 번째 조회, 영속성 컨텍스트에 있으므로 데이터베이스를 조회하지 않음
+Member member2 = em.find(Member.class, 1L);
+```
+
+```java
+//첫 번째 호출: 데이터베이스에서조회
+Member member1 =
+    em.createQuery("select m from Member m where m.id = :id", Member.class)
+    .setParameter("id", 1L)
+    .getSingleResult();
+    
+//두 번째 호출: 데이터베이스에서 조회
+Member member2 =
+    em.createQuery("select m from Member m where m.id = :id", Member.class)
+    .setParameter("id", 1L)
+    .getSingleResult();
+    
+//member 1 == member2는 주소값이 같은 인스턴스
+//JPQL은 항상 데이터베이스에 SQL을 실행해서 결과를 조회
+```
+
 ### 10.6.4 JPQL과 플러시 모드
+
+변경 내역을 데이터베이스에 동기화하는 것 
+
+**`FlushModeType.AUTO`  `FlushModeType.COMMIT`**
+
+```java
+// 커밋 또는 쿼리 실행 시 플러시 (기본값)
+em.setFlushMode(FlushModeType.AUTO) 
+
+// 커밋시에만 플러시
+em.setFlushMode(FlushModeType.COMMIT);
+```
+
+```java
+// 가격을 1000->2000원으로변경
+product.setPrice(2000);
+
+//가격이 2000원인상품조회
+Product product2 =
+    em.createQuery("select p from Product p where p.price = 2000", Product.class)
+    .getSingleResult();
+
+// FlushModeType 기본값이 AUTO 임으로 쿼리 날리기 전 플러시되어 조회가 가능
+```
+
+```java
+em.setFlushMode(FlushModeType.COMMIT);
+
+product.setPrice(2000);
+
+em.flush() 
+
+Product product2 =
+    em.createQuery("select p from Product p where p.price = 2000", Product.class)
+    .getSingleResult();
+```
+
+그럼 무조건 디폴트 AUTO로 쓰면 되는거 아니야?  
+- 쿼리시 발생하는 플러시 횟수를 줄여서 성능을 최적화
+
+JDBC는 오토 기능이 없으므로 쿼리전 항상 플러시 호출
 
 ## 10.7 정리
 
