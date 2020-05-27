@@ -912,7 +912,7 @@ JPA 표준 명세는 NULL\(U\) 값과 TRUE\(T\), FALSE\(F\)의 논리 계산을 
 | :--- | :--- | :--- | :--- |
 | T | T | F | U |
 | F | F | F | F |
-| U |  |  | UFU |
+| U | U | F | U |
 
 **OR**
 
@@ -1011,7 +1011,7 @@ public class Member {
 
 // 3. 사용시 
 List<Member> resultList = em.createNamedQuery("Member.findByUsername", Member.class)
-                        .setParameter("username", ”회원1")
+                        .setParameter("username", "회원1")
                         .getResultList();
 ```
 
@@ -1022,8 +1022,7 @@ List<Member> resultList = em.createNamedQuery("Member.findByUsername", Member.cl
 public @interface NamedQuery {
    String name (); //Named 쿼리 이름 (필수)
    String query () ; //JPQL 정의 (필수)
-   LockModeType lockMode () default NONE; //쿼리 실행 시 락모드를
-   //설정할 수 있다.
+   LockModeType lockMode () default NONE; //쿼리 실행 시 락모드를 설정할 수 있다.
    QueryHint [ ] hints () default {}; //JPA 구현체에 쿼리 힌트를 줄 수 있다.
 }
 ```
