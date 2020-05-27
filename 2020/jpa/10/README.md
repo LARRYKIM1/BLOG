@@ -43,7 +43,7 @@ List<Member> resultList =
 
 ![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015, 354p](../../../.gitbook/assets/image%20%2819%29.png)
 
-### 
+**위 ERD 주문 테이블에 MEMBER\_ID가 들어가야되는 거 같은데...**
 
 #### 시작하기 전에 JPQL의 특징 정리
 
@@ -579,8 +579,6 @@ SELECT o.member FROM Order o -- order:member N:1
 //SQL - 단일 값 연관 경로
 SELECT m.* FROM Orders o INNER JOIN Member m on o.member_id = m.id
 ```
-
-단일 값 연관 경로 실습 - 354p UML 참고하기
 
 * **주문** 중에서 **상품명**이 'productA'고 **배송지**가 'JINJU'인 회원이 소속된 팀을 조회해보자.
 
@@ -1313,8 +1311,6 @@ Product product2 =
 JDBC는 오토 기능이 없으므로 쿼리전 항상 플러시 호출
 
 ## 10.7 정리
-
-### :star: 정리
 
 * JPQL은 SQL을 추상화해서 특정 DB에 종속되지 않는다.
 * Creteria나 QueryDQL은 JPQL을 만들어주는 비럳 역할을 할 뿐이므로 JPQL을 잘 알아야 한다.
