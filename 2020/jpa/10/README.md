@@ -39,6 +39,8 @@ List<Member> resultList =
 
 ## 10.2 JPQL 
 
+### UML와 ERD
+
 ![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015, 354p](../../../.gitbook/assets/image%20%2819%29.png)
 
 ### 
@@ -384,15 +386,75 @@ ORDER BY ent
 
 ### 10.2.6 JPQL 조인 - JPQL
 
+**팀테이블**
+
+| id | team\_name |
+| :--- | :--- |
+| 1 | 팀1 |
+| 2 | 팀2 |
+| 3 | 팀3 |
+| 4 | 팀4 |
+
+**멤버 테이블**
+
+| id | name | age | team\_id |
+| :--- | :--- | :--- | :--- |
+| 1 | 멤버1 | 11 | 1 |
+| 2 | 멤버2 | 12 | 2 |
+| 3 | 멤버3 | 13 | 3 |
+| 4 | 멤버4 | 14 | 1 |
+| 5 | 멤버5 | 15 | 2 |
+| 6 | 멤버6 | 16 | 3 |
+| 7 | 멤버7 | 17 | NULL |
+
 ```sql
 1. 내부조인 
-SELECT m FRCM Member m INNER JOIN m. team t WHERE t.name = :teamName
+SELECT m FROM Member m [INNER] JOIN m.team t WHERE t.name = :teamName
+// -> 특징, 연관 필드를 사용. m.team 
+// -> FROM Member m JOIN Team t // 조인 오류!
+// 회원이 가지고 있는 연관 필드로 팀과 조인
+
+//실행된 SQL
+SELECT
+   M.ID AS ID,
+   M.AGE AS AGE,
+   M.TEAM_ID AS TEAM_ID,
+   M.NAME AS NAME
+FROM
+   MEMBER M INNER JOIN TEAM T ON M.TEAM_ID=T.ID
+WHERE
+   T.NAME=?
+```
+
+```sql
 2. 외부조인
 SELECT m FROM Member m LEFT [OUTER] JOIN m.team t
+
+// 실행된 SQL
+SELECT
+   M.ID AS ID,
+   M.AGE AS AGE,
+   M.TEAM_ID AS TEAM_ID,
+   M.NAME AS NAME
+FROM
+   MEMBER M LEFT OUTER JOIN TEAM T ON M.TEAM_ID=T.ID
+WHERE
+   T.NAME=?
+```
+
+```sql
 3. 컬렉션조인 - 일대다 관계, 다대다 관계 조인
-SELECT t, m FROM Team t LEFT JOIN t.members m --일대다
-4. 세타조인  
-SELECT count(m) FROM Member m, Team t WHERE m.username = t.name
+SELECT t, m FROM Team t LEFT [OUTER] JOIN t.members m --일대다
+// 컬렉션을 사용하는 곳에 조인
+// TypeQuery 사용불가 -> 엔티티 두개로 타입이 달라
+```
+
+```sql
+4. 세타조인
+SELECT count(m) FROM Member m, Team t WHERE m.username = t.name 
+// 내부조인중 하나
+// WHERE절을 사용
+// 전혀 관계없는 엔티티도 조인 가능. 멤버이름-팀이름.
 ```
 
 ```java
@@ -465,8 +527,8 @@ Q. distinct는 컬렉션 패치조인하고 꼭 같이 써야 하는가?
 
 * 상태필드: 단순히 값을 저장하는 필드
 * 연관필드: 객체 사이의 연관관계를 맺기 위해 사용하는 필드, 임베디드 타입 포함
-  * 단일 값 연관 필드: @ManyToOne, @OneToOne, 대상이 엔티티
-  * 컬렉션 값 연관 필드: @OneToMany, @ManyToMany, 대상이 컬렉션
+  * 단일 값 연관 필드: @ManyToOne, @OneToOne -&gt; 대상이 엔티티
+  * 컬렉션 값 연관 필드: @OneToMany, @ManyToMany -&gt; 대상이 컬렉션
 
 ```java
 @Entity
@@ -572,7 +634,7 @@ SELECT t.members.size FROM Team t
 경로 탐색을 사용하면 묵시적 조인이 발생해서 SQL에서 내부 조인이 일어난다.
 
 * 항상 내부 조인이다. `SELECT t.members FROM Team t` 에서 '팀1'에 멤버가 없으면 결과에서 제외됨.
-* 컬렉션은 경로 탐색의 끝이다. 컬렉션에서 경로 탐색을 하려면 명시적으로 조인해서 별칭을 얻어야 한다.
+* 컬렉션은 경로 탐색의 끝이다. 컬렉션에서 경로 탐색을 하려면 **명시적으로 조인**해서 별칭을 얻어야 한다.
 * 경로 탐색은 주로 SELECT, WHERE 절 \(다른 곳에서도 사용됨\)에서 사용하지만 묵시적 조인으로 인해 SQL의 FROM 절에 영향을 준다.
 
 결론, **단순하고 성능에 이슈가 없으면** 크게 문제가 안 되지만 성능이 중요하면 분석하기 쉽도록 묵시적 조인보다는 **명시적 조인을 사용하자.**
@@ -583,17 +645,18 @@ SELECT t.members.size FROM Team t
 * WHERE, HAVING 절에서만 사용 O, 
 * SELECT, FROM 절에서는 사용 X
 
+문제 - 나이가 평균보다 많은 회원 찾는 쿼리 
+
 ```sql
-//나이가 평균보다 많은 회원 찾는 쿼리 
-SELECT m FROM Member m
-WHERE m.age > (SELECT avg(m2.age) FROM Member m2)
+SELECT m FROM Member m1
+WHERE m1.age > (SELECT avg(m2.age) FROM Member m2)
 ```
 
-한 건이라도 주문한 고객을 찾는 쿼리 
+문제 - 한 건이라도 주문한 고객을 찾는 쿼리 
 
 ```sql
 SELECT m FROM Member m
-WHERE (SELECT FROM (o) from Order o WHERE m = o.member) > 0
+WHERE (SELECT COUNT(o) from Order o WHERE m = o.member) > 0
 
 -- size 기능 활용하면 위와 동일한 결과 
 SELECT m FROM Member m WHERE m.orders.size > 0
