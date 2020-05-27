@@ -858,7 +858,7 @@ SELECT i FROM Item i
 WHERE i.DTYPE in ('B', 'M')
 ```
 
-`TREAT` - 자바의 타입 캐스팅과 비슷하며 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용한다. 부모 타입인 Item을 자식 타입인 Book으로 다룬다. 따라서 author 필드에 접근할 수 있다.
+`TREAT` - 자바의 타입 캐스팅과 비슷하며 상속 구조에서 부모 타입을 특정 자식 타입으로 다룰 때 사용한다. 예, 부모 타입인 Item을 자식 타입인 Book으로 다룬다. 이로 author 필드에 접근할 수 있다.
 
 ```sql
 //JPQL
@@ -872,7 +872,8 @@ where i.DTYPE='B' AND i.author='kim'
 ### 10.2.12 사용자 정의 함수 호출\(JPA 2.1\) - JPQL
 
 * 문법: function\_invocation::= FUNCTION\(function\_name {, function\_arg}\*\)
-* 예: SELECT function\('group\_concat', i.name\) FROM Item i // 인터넷 더 찾아보자
+* 예: SELECT function\('group\_concat', i.name\) FROM Item i 
+* [사용자 정의 함수 참고자료](https://thorben-janssen.com/database-functions/)
 
 **하이버네이트의 경우** - 아래같이 방언 클래스를 상속해서 구현하고 사용할 데이터베이스 함수를 미리 등록해야 한다.
 
@@ -881,12 +882,12 @@ where i.DTYPE='B' AND i.author='kim'
 public class MyH2Dialect extends H2Dialect {
    public MyH2Dialect() {
       registerFunction( "group_concat", new StandardSQLFunction
-         ("group_concat", StandardBasicTypes. STRING));
+         ("group_concat", StandardBasicTypes.STRING));
    }
 }
 
 //상속한 방언 클래스 등록(persistence.xml)
-<property name="hibernate.dialect" value=”hello.MyH2Dialect" />
+<property name="hibernate.dialect" value="hello.MyH2Dialect" />
 
 // 이렇게 사용 
 SELECT group_concat(i.name) FROM Item i
@@ -895,14 +896,14 @@ SELECT group_concat(i.name) FROM Item i
 ### 10.2.13 기타정리 - JPQL
 
 * enum은 = 비교 연산만 지원한다.
-* 임베디드 타입은 비교를 지원하지 않는다
+* 임베디드 타입은 비교를 지원하지 않는다. 예, Order o WHERE o.address = ... X
 * JPA 표준은 ''을 길이 0인 EmptyString으로 정했지만 데이터베이스에 따라 ''를 NULL로 사용하는 데이터베이스도 있으므로 확인하고 사용하자.
 * NULL 정의
   * NULL과의 모든 수학적 계산 결과는 NULL
   * Null == Null은 알 수 없는 값
   * Null is Null은 참
 
-JPA 표준 명세는 Null\(U\) 값과 TRUE\(T\), FALSE\(F\)의 논리 계산을 다음과 같이 정의하였다.  
+JPA 표준 명세는 NULL\(U\) 값과 TRUE\(T\), FALSE\(F\)의 논리 계산을 다음과 같이 정의하였다.  
 나중에 자세히 알아보기
 
 **AND**
@@ -936,7 +937,7 @@ JPA 표준 명세는 Null\(U\) 값과 TRUE\(T\), FALSE\(F\)의 논리 계산을 
 JPQL에서 엔티티 객체를 직접 사용하면 SQL에서는 해당 엔티티의 기본 키값을 사용한다
 
 ```sql
-SELECT count (m. id) FROM Member m //엔티티의 아이디를 사용
+SELECT count (m.id) FROM Member m //엔티티의 아이디를 사용
 SELECT count (m) FROM  Member m //엔티티를 직접 사용
 
 // 위 둘다 같은 쿼리 
@@ -953,16 +954,13 @@ List resultList = em.createQuery(qlString)
 
 // 실행된 SQL 
 SELECT m.* FROM Member m WHERE m.id=?
-
-// qlString 쿼리를 ID로 조회해도 같다.
-"SELECT m FROM Member m WHERE m = :member";
 ```
 
 #### 외래키값
 
 ```java
 // 외래 키 대신에 엔티티를 직접 사용
-Team team = em.find(Team.class, 1L); // 기본키 값이 1L인 팀 엔티티를 파라미터로 사용
+Team team = em.find(Team.class, 1L); 
 String qlString = "SELECT m FROM Member m WHERE m.team = :team";
 List resultList = em.createQuery(qlString)
                   .setParameter("team", team)
@@ -972,7 +970,7 @@ List resultList = em.createQuery(qlString)
 SELECT m.* from Member m WHERE m. team_id=?
 
 // qlString 쿼리를 ID로 조회해도 같다.
-"SELECT m FROM Member m WHERE m.team.id = :teamld"
+"SELECT m FROM Member m WHERE m.team.id = :teamId"
 ```
 
 ### 10.2.15 Named Query: 정적쿼리 - JPQL
@@ -983,7 +981,7 @@ JPQL 쿼리는 크게 동적 쿼리와 정적 쿼리로 나뉜다.
   * em.createQuery\("select.."\) 처럼 JPQL을 문자로 완성해서 직접 넘기는 것을 동적 쿼리라 한다. 런타임에 특정 조건에 따라 JPQL을 동적으로 구성할 수 있다.
 * **정적쿼리** = Named 쿼리
   * 미리 정의한 쿼리에 이름을 부여해서 필요할 때 사용한다. 한 번 정의하면 변경할 수 없는 정적인 쿼리다.
-  * **애플리케이션 로딩시점에 JPQL 문법을 체크**하고 미리 파싱해 둔다. 따라서 **오류를 빨리 확인**할 수 있고，사용하는 시점에는 **파싱된 결과를 재사용**하므로 성능상 이점도 있다. 그리고 Named 쿼리는 변하지 않는 정적 SQL이 생성되므로 **데이터베이스의 조회 성능 최적화에도 도움**이 된다.
+  * **애플리케이션 로딩시점에 JPQL 문법을 체크**하고 미리 파싱해 둔다. 따라서 **오류를 빨리 확인**할 수 있고, 사용하는 시점에는 **파싱된 결과를 재사용**하므로 성능상 이점도 있다. 그리고 Named 쿼리는 변하지 않는 정적 SQL이 생성되므로 **데이터베이스의 조회 성능 최적화에도 도움**이 된다. [쿼리캐시자료.](https://12bme.tistory.com/73)
 
 **`@NamedQuery` `@NamedQueries`**
 
