@@ -57,7 +57,7 @@
 
 * [Modern Java in Action](it/modern-java-in-action/README.md)
   * [\# 1장 자바 8, 9, 10 그리고 11에는 무슨일이 일어나고 있는가?](it/modern-java-in-action/1-8-9-10-11.md)
-  * [\# 2장](it/modern-java-in-action/2.md)
+  * [\# 2장 동작 파라미터화로 코드 넘기기](it/modern-java-in-action/2.md)
 * [Effective Java](it/effective-java/README.md)
   * [\# 01 객체들을 생성하고 파괴해보기](it/effective-java/01.md)
   * [\# 02](it/effective-java/02.md)
