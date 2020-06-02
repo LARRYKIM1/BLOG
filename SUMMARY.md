@@ -62,5 +62,5 @@
   * [\# 3장 람다 표현식](it/modern-java-in-action/3.md)
 * [Effective Java](it/effective-java/README.md)
   * [\# 01 객체들을 생성하고 파괴해보기](it/effective-java/01.md)
-  * [\# 02](it/effective-java/02.md)
+  * [\# 02 생성자 파라미터가 많을 경우 빌더를 고려해보자.](it/effective-java/02.md)
 
