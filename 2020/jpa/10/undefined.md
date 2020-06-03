@@ -254,11 +254,9 @@ JOIN FETCH emp.department dep
 
 {% embed url="http://www.gurubee.net/lecture/1503" %}
 
-{% embed url="https://www.youtube.com/watch?v=EwmRIki2HPM&list=PLGTrAf5-F1YLNgq\_0TXd9Xu245dJxqJMr&index=65" %}
+{% embed url="https://engkimbs.tistory.com/835" %}
 
-
-
-
+[JPA 설명 유튜브](https://www.youtube.com/watch?v=EwmRIki2HPM&list=PLGTrAf5-F1YLNgq_0TXd9Xu245dJxqJMr&index=65)
 
 
 
