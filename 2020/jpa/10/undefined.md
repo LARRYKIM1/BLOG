@@ -1,3 +1,7 @@
+---
+description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정리한 내용입니다.
+---
+
 # 질문들 정리
 
 ### 1. EXISTS \| ALL \| ANY \| SOME \| IN 차이
@@ -122,19 +126,135 @@ SELECT d.deptno, d.dname
 
 ### 2. n+1 코드 테스트
 
+* 멤버-주문 양방향 연관관계로 설정
+* FetchType.EAGER로 설정
+* 676 페이지부터 참고하였습니다.
+
+```java
+@Entity
+public class Member {
+@Id @GeneratedValue
+   private Long id;
+
+   @OneToMany(mappedBy = "member", fetch = FetchType.EAGER)
+   private List<Order> orders = new ArrayList<Order>();
+}
+
+@Entity
+@Table(name = "ORDERS")
+public class Order {
+   @Id @GeneratedValue
+   private Long id;
+
+   @ManyToOne
+   private Member member;
+}
+
+-- 쿼리가 한번만 나간다
+em.find(Member.class, id);
+
+-- 실행된 쿼리 
+SELECT M.*, 0.*
+ FROM
+  MEMBER M
+  OUTER JOIN ORDERS 0 ON M.ID=O.MEMBER_ID
 
 
-### 3. EAGER 로딩을 사용중인데도 FETCH JOIN을 사용하는 이유
+-- 문제는 JPQL 쓰면서 발생
+-- 즉시 로딩과 지연 로딩에 대해서 신경 쓰지 않고 JPQL만 사용해서 SQL을 생성
+List<Member> members =
+               em.createQuery("select m from Member m”, Member.class)
+               .getResultList();
 
 
+-- 처음 실행 SQL
+SELECT * FROM MEMBER
+
+-- 주문 컬렉션이 즉시로딩인걸 알고 N+1 쿼리 실행
+-- 멤버가 3명일 경우 3번 이지만 N명이면 N번 나감
+SELECT * FROM ORDERS WHERE MEMBER_ID=1 
+SELECT * FROM ORDERS WHERE MEMBER_ID=2 
+SELECT * FROM ORDERS WHERE MEMBER_ID=3 
+
+즉, 즉시로딩이 있는 컬렉션에 JPQL을 사용할 때 N+1이 발생한다.
+```
+
+* 지연로딩으로 변경할 경우, JPQL 사용을 해도 문제가 없을까? 
+* 주문 컬렉션 FetchType.LAZY로 변경
+
+```java
+public class Member {
+@Id SGeneratedValue
+   ...
+   @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+   ...order...
+}
+
+-- 위와 같은 JPQL을 사용해보면,
+-- 이시점의 실행된 SQL은 N+1이 발생하지 않는다.
+List<Member> members =
+               em.createQuery("select m from Member m", Member.class)
+               .getResultList();
+
+-- 실행된 SQL
+SELECT * FROM MEMBER
+
+-- 하지만 비즈니스 로직에서 주문컬렉션을 사용해야 될때 N+1이 발생한다.
+
+-- 이경우 까지는 N+1이 발생하지 않는다.
+firstMember = members.get(0);
+firstMember.getOrders().size(); //지연 로딩 초기화
+
+-- 실행된 SQL
+SELECT * FROM ORDERS WHERE MEMBER_ID=?
 
 
+-- 문제는 다음처럼 모든 "회원에 대해" 연관된 주문 컬렉션을 사용할 때 발생
+for (Member member : members) {
+   System.out.println( "주문수량=" + member.getOrders().size() );
+} 
+
+-- 실행된 SQL
+SELECT * FROM ORDERS WHERE MEMBER_ID=1 
+SELECT * FROM ORDERS WHERE MEMBER_ID=2 
+SELECT * FROM ORDERS WHERE MEMBER_ID=3 
+
+결론, 즉시로딩과 지연로딩 모두 N+1이 발생하였다...
+즉시로딩 - 조회시점 발생
+지연로딩 - 엔티티 사용시점 발생
+```
+
+#### 해결하는 두가지 방법
+
+* 엔티티그래프\(EntityGraph\) 사용하기 
+  * 14장에서 자세히 나온다.
+  * **FetchType.LAZY** 와 **FetchType.EAGER**로 연관 엔티티를 가져올 것인지를 결정할 수 있다. 하지만 이 구문은 **정적이며 런타임 시 이 설정을 변경하지 못하는 단점**이 있었습니다. **EntityGraph**는 **이러한 점을 보완**하고 연관 엔티티를 어떻게 로딩할 것인지에 대한 정보를 제공함으로서 **엔티티 로딩 속도를 높일 수** 있는 장점이 있습니다. [출처](https://engkimbs.tistory.com/835)
+* 페치조인\(fetch join\) 사용하기
+
+### 3. 즉시\(EAGER\) 로딩을 사용중인데도 FETCH JOIN을 사용하는 이유
+
+즉시로딩으로 하든 페치조인을 하든 조회시점에 연관된 데이터를 즉시 가지고 오는것 동일하다. 하지만 즉시로딩을 설정하고 연관된 컬렉션을 가져올 경우 N+1 문제가 발생했다. 페치 조인은 조인쿼리 하나만 나갔다.
+
+조인과 페치조이 차이 먼저  
+궁금해서 다시 정리...
+
+```sql
+-- 직원만 가져온다.
+FROM Employee emp
+JOIN emp.department dep
+
+-- 직원과 부서 모두 가져온다. 나중에 부서 테이블을 얻기위해 데이터베이스 접근 필요 X
+FROM Employee emp
+JOIN FETCH emp.department dep
+```
 
 
 
 ### 참고자료 
 
 {% embed url="http://www.gurubee.net/lecture/1503" %}
+
+{% embed url="https://www.youtube.com/watch?v=EwmRIki2HPM&list=PLGTrAf5-F1YLNgq\_0TXd9Xu245dJxqJMr&index=65" %}
 
 
 
