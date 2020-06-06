@@ -4,7 +4,7 @@ description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정
 
 # 질문들 정리
 
-### 1. EXISTS \| ALL \| ANY \| SOME \| IN 차이
+## 1. EXISTS \| ALL \| ANY \| SOME \| IN 차이
 
 * 다중 행 연산자\(IN, NOT IN, ANY, ALL, EXISTS\)
 
@@ -124,11 +124,215 @@ SELECT d.deptno, d.dname
 
 ![EXISTS &#xACB0;&#xACFC;](../../../.gitbook/assets/image%20%2825%29.png)
 
-### 2. n+1 코드 테스트
+## 2. n+1 코드 테스트
 
 * 멤버-주문 양방향 연관관계로 설정
-* FetchType.EAGER로 설정
+* FetchType.EAGER로 설정 \(디폴트는 LAZY\)
 * 676 페이지부터 참고하였습니다.
+
+### Member 엔티티
+
+```sql
+package com.example.entity;
+
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+
+@Entity
+@NoArgsConstructor
+public class Member {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "MEMBER_ID")
+    private Long id;
+
+
+    private String name;
+
+    @OneToMany(mappedBy = "member", fetch = FetchType.EAGER)
+    private List<Order> orders = new ArrayList<Order>();
+
+    public void addOrder(Order order){
+        orders.add(order);
+        order.setMember(this);
+    }
+
+    public Member( String name){
+        this.name = name;
+    }
+
+    //Getter, Setter, toString 생략
+}
+```
+
+### Order 엔티티 
+
+```sql
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+
+@Entity
+@NoArgsConstructor
+@Table(name = "ORDERS")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ORDER_ID")
+    private Long id;
+
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "MEMBER_ID")
+    private Member member;
+
+    public Order(String name){
+        this.name=name;
+    }
+
+    //==연관관계 메서드==//
+    public void setMember(Member member) {
+        this.member = member;
+        member.getOrders().add(this);
+    }
+
+    //Getter, Setter, toString
+}
+```
+
+### Main 코드 
+
+```sql
+import com.example.entity.Member;
+import com.example.entity.Order;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.util.List;
+
+@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpabook");
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+
+            //멤버 5명과 각 멤버당 5개 주문 생성. 따라서, 총 15개 주문.
+            generateMemberAndOrder(em);
+
+            em.clear();
+
+            //1 em.find()
+             testWithoutJpql(em);
+
+            //2 JPQL일 경우
+//            testWithJpql(em);
+
+            //3 지연로딩 일때 JPQL - 멤버 엔티티 주문컬렉션 LAZY로 변경후 실행
+//            testWithJpqlOnLazyLoading(em);
+
+            //4 페치 조인 사용
+//            testFetchJoin(em);
+
+            tx.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            tx.rollback();
+        } finally {
+            em.close();
+        }
+
+        emf.close();
+    }
+
+    public static void generateMemberAndOrder(EntityManager em){
+
+        // 멤버 5명과 각각 멤버가 주문 3개씩 갖게 만든다. 총 15개 주문.
+        int num=1;
+        for(long i=1; i<=5; i++){
+            Member member = new Member( "멤버"+i);
+            em.persist(member);
+
+            System.out.println("iii "+i);
+            for(int j=1; j<=3; j++){
+                Order order = new Order("주문"+num);
+                order.setMember(member);
+                em.persist(order);
+                num++;
+                System.out.println("jjj "+j);
+            }
+        }
+
+    }
+
+    public static void testWithoutJpql(EntityManager em){
+        System.out.println("1>>>>>>>>>>>>>>>>>>>>>>>>");
+        Member member = em.find(Member.class,1l);
+        System.out.println("멤버1="+member.toString());
+    }
+
+    public static void testWithJpql(EntityManager em){
+        // 처음에는 JPQL 대로 SQL이 나가지만
+        // 이후에 주문 컬렉션이 즉시로딩인걸 알고 N+1 쿼리 실행 - 멤버수만큼 5개 더 나간다.
+        System.out.println("2>>>>>>>>>>>>>>>>>>>>>>>>");
+        List<Member> members =
+                em.createQuery("select m from Member m", Member.class)
+                        .getResultList();
+    }
+
+    public static void testWithJpqlOnLazyLoading(EntityManager em){
+        System.out.println("3>>>>>>>>>>>>>>>>>>>>>>>>");
+        List<Member> members =
+                em.createQuery("select m from Member m", Member.class)
+                        .getResultList();
+
+        Member firstMember = members.get(0);
+        System.out.println( "주문수량 = "+firstMember.getOrders().size()); //지연로딩 초기화
+
+        //만약 아래 처럼 모든 멤버의 주문들을 가져올 경우... 쿼리가... 5개...
+//        System.out.println("4>>>>>>>>>>>>>>>>>>>>>>>>");
+//        for (Member member : members) {
+//            System.out.println("주문수량="+member.getOrders().size());
+//        }
+
+        // 즉시로딩 - 조회시점 N+1 문제
+        // 지연로딩 - 엔티티 사용시점 N+1 문제
+    }
+
+    public static void testFetchJoin(EntityManager em){
+        System.out.println("5>>>>>>>>>>>>>>>>>>>>>>>>");
+        //distinct 빼먹으면 안됨 
+        List<Member> members =
+                em.createQuery("select distinct m from Member m JOIN FETCH m.orders", Member.class)
+                        .getResultList();
+
+        System.out.println("6>>>>>>>>>>>>>>>>>>>>>>>>");
+        for (Member member : members) {
+            System.out.println("주문수량=" + member.getOrders().size());
+        }
+
+        // 만약 outer join이 하고 싶을때는?? 엔티티그래프
+    }
+
+}
+
+```
+
+### 각 코드 설명 
 
 ```java
 @Entity
@@ -163,7 +367,7 @@ SELECT M.*, 0.*
 -- 문제는 JPQL 쓰면서 발생
 -- 즉시 로딩과 지연 로딩에 대해서 신경 쓰지 않고 JPQL만 사용해서 SQL을 생성
 List<Member> members =
-               em.createQuery("select m from Member m”, Member.class)
+               em.createQuery("select m from Member m", Member.class)
                .getResultList();
 
 
@@ -231,7 +435,7 @@ SELECT * FROM ORDERS WHERE MEMBER_ID=3
   * **FetchType.LAZY** 와 **FetchType.EAGER**로 연관 엔티티를 가져올 것인지를 결정할 수 있다. 하지만 이 구문은 **정적이며 런타임 시 이 설정을 변경하지 못하는 단점**이 있었습니다. **EntityGraph**는 **이러한 점을 보완**하고 연관 엔티티를 어떻게 로딩할 것인지에 대한 정보를 제공함으로서 **엔티티 로딩 속도를 높일 수** 있는 장점이 있습니다. [출처](https://engkimbs.tistory.com/835)
 * 페치조인\(fetch join\) 사용하기
 
-### 3. 즉시\(EAGER\) 로딩을 사용중인데도 FETCH JOIN을 사용하는 이유
+## 3. 즉시\(EAGER\) 로딩을 사용중인데도 FETCH JOIN을 사용하는 이유
 
 즉시로딩으로 하든 페치조인을 하든 조회시점에 연관된 데이터를 즉시 가지고 오는것 동일하다. 하지만 즉시로딩을 설정하고 연관된 컬렉션을 가져올 경우 N+1 문제가 발생했다. 페치 조인은 조인쿼리 하나만 나갔다.
 
@@ -239,7 +443,7 @@ SELECT * FROM ORDERS WHERE MEMBER_ID=3
 궁금해서 다시 정리...
 
 ```sql
--- 직원만 가져온다.
+-- 직원만 가져온다. 
 FROM Employee emp
 JOIN emp.department dep
 
