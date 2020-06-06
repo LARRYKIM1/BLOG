@@ -130,6 +130,29 @@ SELECT d.deptno, d.dname
 * FetchType.EAGER로 설정 \(디폴트는 LAZY\)
 * 676 페이지부터 참고하였습니다.
 
+### persistence.xml 코드 
+
+```sql
+<persistence-unit name="jpabook">
+   <properties>
+        <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+        <property name="javax.persistence.jdbc.user" value="sa"/>
+        <property name="javax.persistence.jdbc.password" value=""/>
+        <property name="javax.persistence.jdbc.url" value="jdbc:h2:tcp://localhost/~/test"/>
+
+        <!-- H2 데이터베이스 방언 사용 -->
+        <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+        <!-- 테이블 자동 생성 -->
+        <property name="hibernate.hbm2ddl.auto" value="create"/>
+        <!-- 실행되는 SQL 을 보여줌, 콘솔에 중복 노출되서 false-->
+        <property name="hibernate.show_sql" value="false" />
+        <!-- 실행되는 SQL 을 이쁘게 보여줌 -->
+        <property name="hibernate.format_sql" value="true"/>
+        <property name="hibernate.id.new_generator_mappings" value="true"/>
+    </properties>
+</persistence-unit>
+```
+
 ### Member 엔티티
 
 ```sql
