@@ -64,4 +64,6 @@
   * [\# 01 객체들을 생성하고 파괴해보기](it/effective-java/01.md)
   * [\# 02 생성자 파라미터가 많을 경우 빌더를 고려해보자.](it/effective-java/02.md)
   * [\# 45 주의해서 스트림을 사용하자.](it/effective-java/45-..md)
+* [여러가지](undefined/README.md)
+  * [Git 명령어](undefined/git.md)
 
