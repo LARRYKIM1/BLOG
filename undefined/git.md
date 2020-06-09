@@ -16,11 +16,12 @@
 
 ## commit, pull, fetch, push, add  
 
-* git commit -m "설명" 
+* git commit -am "설명" : 코드 add하고 커밋  \(git add가 포함\)
 * git pull : 최신 코드 받아와 merge 하기 
 * git fetch : 최신 코드 받아오기
 * git push romote\_name branch\_name : add하고 commit한 코드 git server에 보내기  \(git push origin master\)
-* git add file\_path : 수정한 코드 선택하기
+
+
 
 ## reset
 
