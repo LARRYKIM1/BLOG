@@ -1,7 +1,5 @@
 # Git 명령어
 
-## 가져오기
-
 ## init 
 
 * git reset — hard HEAD && git pull : git 코드 강제로 모두 받아오기
