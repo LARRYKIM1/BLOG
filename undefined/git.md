@@ -6,6 +6,7 @@
 
 ## branch
 
+* git checkout -b : 브랜치 생성하고 체크아웃 바로하기 
 * git checkout branch\_name: 브랜치 선택하기
 * git checkout -t remote\_path/branch\_name : 원격 브랜치 선택하기
 * git branch -r : 원격 브랜치 목록보기
