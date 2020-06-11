@@ -1134,15 +1134,53 @@ JPA 표준으로 지원하지만 복잡하여 생략. QueryDSL 사용하기.
 
 ## 10.4 QueryDSL
 
+#### 특징
+
+* QueryDSL은 JPQL 빌더 역할을 하며 Criteria 대체 가능
+* 쉽고 간결하며 모양도 쿼리와 비슷하게 개발 가능
+
 ### 10.4.1 설정 - QueryDSL
 
+**필요 라이브러리\(pom.xml\)**
+
+* **`querydsl-jpa`**  QueryDSL JPA 라이브러리
+* **`querydsl-apt`** 쿼리 타입\(Q\)을 생성할 때 필요한 라이브러리
+
+**환경설정**
+
+* QueryDSL을 사용하려면 엔티티를 기반으로 쿼리 타입이라는 쿼리용 클래스를 생성해야 함\(예, QMember 엔티\)
+* 쿼리 타입 생성용 플러그인을 pom.xml에 추가
+  * 콘솔에서 `mvn compile`을 입력하면 outputDirectory에 지정한 target/generated-sources 위치에 QMember.java처럼 Q로 시작하는 쿼리 타입들이 생성
+
 ### 10.4.2 시작 - QueryDSL
+
+```java
+  QMember qMember = new QMember("m");     // 직접 지정
+  QMember qMember2 = QMember.member;      // 기본 인스턴스 사용
+```
 
 ### 10.4.3 검색조건 쿼리 - QueryDSL
 
 ### 10.4.4 결과 조회 - QueryDSL
 
 ### 10.4.5 페이징과 정렬 - QueryDSL
+
+
+
+```java
+ QItem item = QItem.item;
+  
+query.from(item)
+  .where(item.price.gt(20000))
+  .orderBy(item.price.desc(), item.stockQuantity.asc())
+  .offset(10).limit(20)
+  .list(item);
+  
+QueryModifiers queryModifiers = new QueryModifiers(20L, 10L);     // limit, offset
+List<Item> list = query.from(item)
+                      .restrict(queryModifiers)
+                      .list(item);
+```
 
 ### 10.4.6 그룹 - QueryDSL
 
