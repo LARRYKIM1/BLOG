@@ -455,6 +455,14 @@ public interface Persistable<ID extends Serializable> extends Serializable {
 }
 ```
 
+## 8. 스프링 데이터 JPA와 QueryDSL 통합
+
+**`QueryDslPredicateExecutor`**  **`QueryDslRepositorySupport`**
+
+스프링 데이터 JPA는 위 2가지 방법으로 QueryDSL을 지원한다. [실습참고 ](https://app.gitbook.com/@foflzla12/s/larrykim-blog/~/drafts/-M9WGehi1d6yX4gkDGqa/2020/jpa/12-jpa/12)
+
+다음 장에서는 J2EE와 스프링 컨테이너 환경에서 영속성 컨텍스트가 어떻게 동작하는지 알아보자.
+
 ## 참고 자료
 
 {% embed url="https://docs.spring.io/spring-data/jpa/docs/1.5.0.RELEASE/reference/html/jpa.repositories.html" %}
