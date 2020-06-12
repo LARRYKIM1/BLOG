@@ -31,7 +31,7 @@ select m from Member m where username =:username
 
 스프링 프레임워크와 JPA를 사용하는 환경에서 스프링 데이터 JPA를 꼭 사용하자.
 
-## 1. 설정 \(스프링 프레임워크 사용시\)
+## 12.1. 설정 \(스프링 프레임워크 사용시\)
 
 ```java
 // 1. pom.xml 종속성 설정 
@@ -48,7 +48,7 @@ public class AppConfig {}
 
 애플리케이션을 실행할 때 basePackage에 있는 리포지토리 인터페이스들을 찾아서, 해당 인터페이스를 구현한 클래스를 동적으로 생성한 다음 스프링 빈으로 등록한다. 
 
-## 2. JpaRepository 주요 메소드
+## 12.2. JpaRepository 주요 메소드
 
 | **메소드**  | **설명** |
 | :---: | :--- |
@@ -58,7 +58,7 @@ public class AppConfig {}
 | **getOne\(ID\)**  | 엔티티를 프록시로 조회한다. 내부에서 EntityManager.getReferenc\(\)를 호출 |
 |  **findAll\(...\)** | 정렬\(Sort\)이나 페이징\(Pageable\) 조건을 파라미터로 제공할 수 있다. |
 
-## 3. 쿼리 메소드 기능 
+## 12.3. 쿼리 메소드 기능 
 
 1. 메소드 이름으로 쿼리 자동 생성  \(위 findByUsername\)
 2. 메소드 이름으로 NamedQuery 호출 
@@ -245,7 +245,7 @@ Page<Member> findByName(String name, Pagable pageable);
 List<Member> findByName(String name);
 ```
 
-## 4. 명세 
+## 12.4. 명세 
 
 책 Domain Driven Design는 SPECIFICATION 개념을 소개하는데, 스프링 데이터 JPA는 **JPA Criteria**로 이 개념을 사용할 수 있도록 지원한다. 명세를 이해하기 위해선 핵심단어 술어\(predicate\)를 알아야 한다.
 
@@ -324,7 +324,7 @@ public class OrderSpec {
 
 toPredicate\(\) 메소드 구현하면 JPA Criteria의 Root, CriteriaQuery, CriteriaBuilder 클래스가 모두 파라미터로 주어진다. 이 파라미터들을 활용해서 적절한 검색 조건을 반환하면 된다. \(10장 Criteria부분 참고\)
 
-## 5. 사용자 정의 리포지토리
+## 12.5. 사용자 정의 리포지토리
 
 스프링 데이터 JPA로 리포지토리를 개발하면 인터페이스만 정의하고 구현체는 만들지 않는다. 하지만 여 이유로 메소드를 직접 구현해야 할 때도 있다. 그렇다고 리포지토리를 직접 구현하면 공통 인터페이스가 제공하는 기능까지 모두 구현해야 한다. 스프링 데이터 JPA는 이런 문제를 우회해서 필요한 메소드만 구현할 수 있는 방법을 제공한다.
 
@@ -353,7 +353,7 @@ public interface MemberRepository
 }
 ```
 
-## 6. 웹 확장
+## 12.6. 웹 확장
 
 * 스프링 MVC에서 사용할 수 있는 편리한 기능을 제공한다.
   * **도메인 클래스 컨버터 기능 -**  식별자로 도메인 클래스를 바로 바인딩
@@ -419,7 +419,7 @@ public String list(
 }
 ```
 
-## 7.  스프링 데이터 JPA가 사용하는 구현체 
+## 12.7.  스프링 데이터 JPA가 사용하는 구현체 
 
 공통 인터페이스는**`SimpleJpaRepository`** 클래스가 구현한다.
 
@@ -455,7 +455,7 @@ public interface Persistable<ID extends Serializable> extends Serializable {
 }
 ```
 
-## 8. 스프링 데이터 JPA와 QueryDSL 통합
+## 12.8. 스프링 데이터 JPA와 QueryDSL 통합
 
 **`QueryDslPredicateExecutor`**  **`QueryDslRepositorySupport`**
 
