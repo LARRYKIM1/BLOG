@@ -241,7 +241,7 @@ public class MemberRepository {
 지금처럼 영속성 컨텍스트가 달라지면 동일성 비교는 실패한다. 이때는 **데이터베이스 동등성 비교**를 사용해야 한다. 
 
 ```java
-member.getld().equals(findMember.getld());
+member.getId().equals(findMember.getId());
 ```
 
 하지만 엔티티를 영속화해야 식별자를 얻어 비교할 수 있다는 문제가 있기에,  이때는 동등성 비교\(equals\(\)\)를 사용할 수 있다. 영속화 하기 전에는 null이다. 즉, 비즈니스키\(예.주민번호\)를 이용해 동등성 비교를 하자.
@@ -280,13 +280,11 @@ public void 영속성컨텍스트와_프록시 () {
 
 영속성 컨텍스트는 프록시로 조회된 엔티티에 대해서 같은 엔티티를 찾는 요청이 오면, 원본 엔티티가 아닌 **처음 조회된 프록시를 반환**한다.  프록시로 조회해도 영속성 컨텍스트는 영속 엔티티의 동일성을 보장한다.
 
-엔티티 조회후 동일 엔티티를 프록시로 찾으면?
-
-프록시가 아닌 원본 엔티티가 반환된다. 이 경우에도, 영속성 컨텍스트는 엔티티의 동일성을 보장한다
+em.getReference\(\)와 em.find\(\) 위치를 바꿔도 동일성을 보장한다. 다만, 결과가 프록시가 아닌 실제 엔티티.
 
 ### 3.2 프록시 타입비교
 
-프록시로 조회한 엔티티의 타입을 비교할 때는, == 비교를 하면 안 되고, 대신에 **`instanceof`를 사용**해야 한다. 
+프록시로 조회한 엔티티의 타입을 비교시 **`instanceof`** 사용\( == 동일성 비교 x\)
 
 ```java
 @Test
@@ -364,17 +362,10 @@ public void 프록시의_동등성비교() {
 
 둘 다 회원1로 같으므로 동등성 비교를 하면 성공할 것 같다. 그러나 newMember.equals\(refMember\) 의 결과는 false가 나오면서 테스트가 실패한다. 
 
-**질문 - 왜 이런 문제가 발생하는 것 일까?**
+**질문 - 왜 이런 문제가 발생하는 것 일까?** 
 
 ```java
-//변경후
-if (this.getClass() != obj.getClass()) return false; 
-//변경후
-if (!(tanceof obj.getClass! (obj instanceof Member)) return false; 
-```
-
-```java
-//변경후
+//변경
 if (this.getClass() != obj.getClass()) return false; 
 //변경후
 if (!(obj instanceof Member)) return false; 
@@ -382,7 +373,7 @@ if (!(obj instanceof Member)) return false;
 
 앞서 이야기한데로 프록시는 원본을 상속받은 자식 타입이므로 프록시의 타입을 비교할 때는 == 비교가 아닌 instanceof를 사용해야 한다.
 
-그리고 한가지 문제가 더 있다. equals \(\) 메소드를 구현할 때는 일반적으로 멤버변수를 직접 비교하는데，프록시의 경우는 문제가 된다. 프록시는 실제 데이터를 가지고 있지 않다. 따라서 프록시의 멤버변수에 직접 접근하면 아무값도 조회할 수 없다.  프록시의 데이터를 조회할 때, 접근자\(Getter\)를 사용해야 한다.
+그리고 한가지 문제가 더 있다. equals \(\) 메소드를 구현할 때는 일반적으로 멤버변수를 직접 비교하는데, 프록시의 경우는 문제가 된다. 프록시는 실제 데이터를 가지고 있지 않다. 따라서 멤버변수에 직접 접근하지 말고 접근자\(Getter\)를 사용해야 한다..
 
 ```java
 //
@@ -447,7 +438,7 @@ public void 부모타입으로_프록시조회 (() {
     Item proxyItem = em.getReference(Item.class, savedBook.getId());
     System.out.println("proxyitem = " + proxyitem.getClass());
     
-    if (proxyitem instanceof Book) {
+    if (proxyitem instanceof Book) { // false 가 나온다.
         System.out.println("proxyitem instanceof Book");
         Book book = (Book) proxyItem;
         System.out.println("책 저자 = " + book.getAuthor());
@@ -520,14 +511,14 @@ public static <T> T unProxy(Obj ect entity) {
 }
 
 //실행 코드 
-Item item = orderitem.getItem();
-Item unProxyitem = unProxy(item);
-if (unProxyitem instanceof Book) {
-    System.out.printin("proxyitem instanceof Book");
+Item item = orderItem.getItem(); //// lazy 로딩 = 프록시
+Item unProxyItem = unProxy(item);
+if (unProxyItem instanceof Book) {
+    System.out.println("proxyitem instanceof Book");
     Book book = (Book) unProxyitem;
-    System.out.printin ( "책 저자 = " + book.getAuthor());
+    System.out.println( "책 저자 = " + book.getAuthor());
 }
-Assert.assertTrue(item != unProxyitem);
+Assert.assertTrue(item != unProxyItem);
 }
 
 //결과 
@@ -535,7 +526,7 @@ Assert.assertTrue(item != unProxyitem);
 //책 저자 = shj
 ```
 
-영속성 컨텍스트는 한 번 프록시로 노출한 엔티티는 계속 프록시로 노출한다. 그래야 영속성 컨텍스트가 영속 엔티티의 동일성을 보장 할 수 있기 때문이다. 그런데 **`unProxy()`** 프록시에서 원본 엔티티를 직접 꺼내기 때문에 프록 시와 원본 엔티티의 **동일성 비교가 실패한다는 문제점**이 있다.
+영속성 컨텍스트는 한 번 프록시로 노출한 엔티티는 계속 프록시로 노출한다. 그래야 영속성 컨텍스트가 영속 엔티티의 동일성을 보장 할 수 있기 때문이다. 그런데 **`unProxy()`** **프록시에서 원본 엔티티를 직접 꺼내기 때문에 프록시와 원본 엔티티의** **동일성 비교가 실패한다는 문제점이 있다.**
 
 #### 기능을 위한 별도 인터페이스 제공 
 
@@ -560,9 +551,10 @@ public class Book extends Item {
     //...
     @Override
     public String getTitle() {
-        return "책이";
+        return "[제목:"+getName()+" 저자:"+author+"]";
     }
 }
+// Movie, Albume도 getTitle() 추가
 ----------------------------------------------------------------
 @Entity
 public class OrderItem {
@@ -596,7 +588,6 @@ public interface Visitor {
     void visit(Movie movie);
     void visit(Album album);
 }
-
 ----------------------------------------------------------------
 //2 Visitor의 구현 클래스
 public class PrintVisitor implements Visitor {
@@ -665,9 +656,9 @@ public class Album extends Item {
 ----------------------------------------------------------------
 //5 실행 코드 
 @Test
-public void 상속관계와_프록시_VisitorPattern () {
+public void 상속관계와_프록시_VisitorPattern() {
     //orderItem-item의 fetchType 지연로딩
-    //OrderItem에 아이 Book이 담겼다 가정한.다 
+    //OrderItem에 아이템 Book이 담겨있다고 가정한다.
     OrderItem orderItem = em.find(OrderItem.class, orderItemId);
     Item item = orderItem.getItem(); //item은 프록
     
@@ -701,17 +692,17 @@ TitleVisitor 클래스는 사용하지 않았는데, 비지터 패턴을 구현�
 
 \(생략\) 10장 질문으로 정리 해둠
 
-요약 - 지연로딩만 사용하고, 성능 최적화가 필요한 곳에만 페치조인 사용하자.  
-@OneToOne @ManyToOne은 지연로딩 명시하기.
+요약 - 지연로딩만 사용\(@OneToOne @ManyToOne은 지연로딩 명시\)하고, 성능 최적화가 필요한 곳에만 페치조인 사용하자.
 
 ### 4.2 읽기 전용 쿼리의 성능 최적화
 
-엔티티가 영속성 컨텍스트에 관리되면 1차 캐시부터 변경 감지까지 얻을 수 있는 해택이 많다. 하지만 영속성 컨텍스트는 변경감지를 위해 스냅샷 인스턴스를 보관하므로 더 많은 메모리를 사용하는 단점이 있다. 이때는 읽기 전용으로 엔티티를 조회하면 메모리 사용량을 최적화할 수 있다.
+엔티티가 영속성 컨텍스트에 관리되면, **1차 캐시부터 변경 감지까지** 얻을 수 있는 해택이 많다. 하지만 영속성 컨텍스트는 변경감지를 위해 **스냅샷 인스턴스를 보관하므로 더 많은 메모리를 사용하는 단점이 있다.** 이때는 **읽기 전용으로 엔티티를 조회하면** 메모리 사용량을 최적화할 수 있다.
 
-* 스칼라 타입으로 조회 
-* 읽기 전용 쿼리 힌트 사용
-* 읽기 전용트랜잭션 사용
-* 트랜잭션 밖에서 읽기
+* 메모리 낭비 wㅜㄹ이는 방법들 
+  * 스칼라 타입으로 조회 
+  * 읽기 전용 쿼리 힌트 사용
+  * 읽기 전용트랜잭션 사용
+  * 트랜잭션 밖에서 읽기
 
 #### 스칼라 타입으로 조회 
 
@@ -742,11 +733,13 @@ query.setHint("org.hibernate.readonly", true);
 트랜잭션을 사용하지 않으면 플러시가 일어나지 않으므로 조회 성능이 향상된다.
 
 ```sql
+//NOT_SUPPORTED 
+//트랜잭션을 사용하지 않게 한다. 이미 진행 중인 트랜잭션이 있으면 보류시킨다.
 @Transactional(propagation = Propagation.NOT_SUPPORTED) //Spring
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED) //J2EE
 ```
 
-요약하자면, 읽기 전용 데이터를 조회할 때, 메모리를 최적화하려면 "스칼라 타입으로 조회"하거나 하이버네이트가 제공하는 "읽기 전용 쿼리 힌트"를 사용하면 되고, 플러시 호출을 막아서 속도를 최적화하려면 "읽기 전용 트랜잭션"을 사용하거나 "트랜잭션 밖에서 읽기"를 사용하면 된다.
+요약하자면, 읽기 전용 데이터를 조회할 때, **메모리를 최적화하려면** "스칼라 타입으로 조회"하거나 하이버네이트가 제공하는 "읽기 전용 쿼리 힌트"를 사용하면 되고, **플러시 호출을 막아서 속도를 최적화하려면** "읽기 전용 트랜잭션"을 사용하거나 "트랜잭션 밖에서 읽기"를 사용하면 된다.
 
 ```sql
 //스프링 사용시 이상적인 방법
@@ -760,7 +753,7 @@ public List<DataEntity> findDatas() {
 
 ### 4.3 배치 처리 
 
-영속성 컨텍스트에 아주 많은 엔티티가 쌓이면서 **메모리 부족 오류가 발생**한다. 따라서 이런 배치 처리는 일정 단위마다 영속성 컨텍스트의 엔티티를 데이터베이스에 플러시하고 영속성 컨텍스트를 초기화해야 한다.또한, 2차 캐시에 엔티티를 보관하지 않도록 주의해야 한다. \(16.2절 참고\)
+메모리 부족을 피하기 위해. 일정 단위마다 영속성 컨텍스트의 엔티티를 데이터베이스에 플러시하고 영속성 컨텍스트를 초기화해야 한다. 또한, 2차 캐시에 엔티티를 보관하지 않도록 주의해야 한다. \(16.2절 참고\) 
 
 #### 등록 배치 처리  - 10만건 
 
@@ -816,7 +809,7 @@ em.close();
 ----------------------------------------------------------------
 // case 2 : 커서 
 // JPA는 JDBC 커서를 지원하지 않는다. 
-// 따라서 커서를 사용하려면 하이버네이트 세션session을 사용한다.
+// 하이버네이트 세션을 사용한다.
 // Session session = entityManager.unwrap(Session.class); 이렇게 사용.
 EntityTransaction tx = em.getTransaction();
 Session session = em.unwrap(Session.class);
@@ -857,7 +850,7 @@ ScrollableResults scroll =
 while (scroll.next()) {
     Product p = (Product) scroll.get(0);
     p.setPrice(p.getPrice() + 100);
-    session.update(p) ; "직접 update# 호출해야 한다.
+    session.update(p) ; //직접 update 호출해야 한다.
 }
 
 tx.commit();
@@ -923,7 +916,7 @@ em.persist(new Member()); //6
 em.persist(new Member()); //7
 ```
 
-참고로, Member 엔티티의 ID 생성전략이 IDENTITY였으면, persist\(\) 호출시 데이터베이스와 즉시 통신해버린다. \(데이터베이스에 저장해야 식별자를 구할 수 있.다.\)
+참고로, Member 엔티티의 ID 생성전략이 **`@GeneratedValue(strategy=GenerationType.IDENTITY)`**였으면, persist\(\) 호출시 데이터베이스와 즉시 통신해버린다. \(데이터베이스에 저장해야 식별자를 구할 수 있다.\)
 
 트랜잭션을 커밋해서 영속성 컨텍스트를 플러시하기 전까지는 데이터 베이스에 데이터를 등록, 수정, 삭제하지 않는다. 따라서 커밋 직전까지 DB 로우에 락을 걸지 않는다.
 
