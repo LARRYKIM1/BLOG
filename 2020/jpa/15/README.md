@@ -18,8 +18,7 @@ description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정
 
 #### 준비한 실습 
 
-* 예외 4개 EntityExistsException / EntityNotFoundException / RollbackException /TransactionRequiredException
-* 추상화된 예외 3개 
+* 예외
 * 상속관계에서 프록시 문제 해결
   * 기능을 위한 별도 인터페이스 제공
   * 비지터패턴
@@ -561,7 +560,7 @@ public class Book extends Item {
     //...
     @Override
     public String getTitle() {
-        return ""이;
+        return "책이";
     }
 }
 ----------------------------------------------------------------

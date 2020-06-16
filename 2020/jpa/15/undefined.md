@@ -61,9 +61,9 @@ assertThrows(IllegalStateException.class, () -> {
 });
 ```
 
-## NonUniqueResultException 예외
+## NonUniqueResultException NoResultException 예외
 
-**`getSingleResult()`** 메소드 실행시 1개 보다 많은 결과가 찾아질 때 발생.
+**`getSingleResult()`** 메소드 실행시 1개 보다 많은 결과가 찾아질 때 발생. 후자는 없을때.
 
 ## IllegalArgumentException 예외
 
@@ -109,7 +109,7 @@ public class Customer {
 
 ## OptimisticLockException 
 
-![](../../../.gitbook/assets/image%20%2856%29.png)
+![Antonio Goncalves, &#x300C;Understanding JPA 2.2&#x300D;, Amazon KDP, 2019 ](../../../.gitbook/assets/image%20%2856%29.png)
 
 
 
