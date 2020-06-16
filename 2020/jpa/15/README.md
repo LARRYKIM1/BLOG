@@ -1,0 +1,944 @@
+---
+description: 김영한 저 "자바 ORM 표준 JPA 프로그래밍"을 읽고 정리한 내용입니다.
+---
+
+# \#15 고급주제와 성능최적화
+
+## 주제
+
+* 예외 처리 
+* 엔티티 비교 주의점과 해결 방법 
+* 프록시 심화 주제 
+* 성능 최적화
+  * N+1 문제
+  * 읽기 전용 쿼리의 성능: 최적화 엔티티를 단순히 조회만 하면 영속성 컨텍스트에 스냅샷을 유지할 필요도 없고 영속성 컨텍스트를 플러시할 필요도 없다. 엔티티를 읽기 전용으로 쿼리할 때 성능 최적화 방안을 다룬다.
+  * 배치 처리
+  * SQL 쿼리 힌트 사용: 하이버네이트를 주로 다룬다.
+  * 트랜잭션을 지원하는 쓰기 지연과 성능 최적화: 트랜잭션을 지원하는 쓰기 지연을 통해 성능을 최적화하는 방법을 다룬다. 
+
+#### 준비한 실습 
+
+* 예외 4개 EntityExistsException / EntityNotFoundException / RollbackException /TransactionRequiredException
+* 추상화된 예외 3개 
+* 상속관계에서 프록시 문제 해결
+  * 기능을 위한 별도 인터페이스 제공
+  * 비지터패턴
+* 캐시 확인하는 법 배워서 2만개 데이터 넣고 꺼낼때, 
+
+## 1. 예외 처리 
+
+### 1.1 JPA 표준예외 정리 
+
+* **`JPA 모든 예외`** &lt; **`PersistenceException`** &lt; **`RuntimeException`**  즉, JPA 예외는 모두 **언체크** 예외이다. [링크](https://close852.tistory.com/47)
+* JPA 표준 예외는 크게 2가지로 나눌 수 있다.
+  * 트랜잭션 롤백을 표시하는 예외
+  * 트랜잭션 롤백을 표시하지 않는 예외
+
+![&#xCD9C;&#xCC98;: https://www.objectdb.com/api/java/jpa/exceptions](../../../.gitbook/assets/image%20%2847%29.png)
+
+#### 트랜잭션 롤백을 표시하는 예외\(빨간색\)
+
+* 심각한 예외이므로 복구해선 안 된다. 강제로 커밋해도 트랜잭션이 커밋되지 않고 대신에   RollbackException 예외가 발생한다.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2849%29.png)
+
+#### 트랜잭션 롤백을 표시하지 않는 예외
+
+* 심각한 예외가 아니다. 개발자가 판단해서 트랜잭션 커밋, 롤백한다.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2852%29.png)
+
+### 1.2 스프링 프레임워크의 JPA 예외 변환
+
+ 서비스 계층에서 JPA의 예외를 직접 사용하면 JPA에 의존하게 된다. 아래는 추상화된 예외들이다.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2841%29.png)
+
+* JPA 표준 명세상 발생할 수 있는 다음 두 예외도 추상화 해서 제공한다.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2846%29.png)
+
+### 1.3 스프링 프레임워크에 JPA 예외 변환기 적용
+
+* JPA 예외를 스프링 프레임워크가 제공하는 추상화된 예외로 변경하려면 **`PersistenceExceptionTranslationPostProcessor`**를 스프링 빈으로 등록한다.
+
+```java
+//JavaConfig 설정 
+@Bean
+public PersistenceExceptionTranslationPostProcessor
+exceptionTranslation() {
+    return new PersistenceExceptionTranslationPostProcessor();
+}
+```
+
+* **`@Repository`**를 사용한 곳에  예외변환 AOP를 적용해서, JPA 예외를 스프링 프레임워크가 추상화한 예외로 변환해준다. 아래 findMember\(\) 메소드가  조회된 데이터가 없을 경우.
+
+```java
+@Repository
+public class NoResultExceptionTestRepository {
+    
+    @Persistencecontext EntityManager em;
+    
+    //리턴값이 없다고 가정 
+    //javax.persistence.NoResultException 발생 
+    //메소드 빠져나갈때 AOP 인터셉터 동작
+    //org.springframework.dao.EmptyResultDataAccessException로 예외 변환 후 반환 
+    public Member findMember() { 
+        return em.createQuery("select m from Member m", Member.class)
+        .getSingleResult();
+    }
+}
+
+//추상화된 예외를 변환하지 않을 경우 
+@Repository
+public class NoResultExceptionTestService {
+    @Persistencecontext EntityManager em;
+    piiblic member findMember() throws javax.persistence.NoResultException
+    {
+        return em.createQuery("select m from Member m",
+        Member.class).getSingleResult();
+    }
+}
+```
+
+## 1.4 롤백 시 주의사항
+
+* 데이터베이스의 반영사항만 롤백하였을 경우 영속성 컨택스트 내부 객체는 그대로 남아다. 따라서 트랜잭션  이 롤백된 영속성 컨텍스트를 그대로 사용하는 것은 위험하다.
+
+1. **트랜잭션당 영속성 컨택스트 전략**  - 문제생겼을 때 트랜잭션 AOP 종료시점 트랜잭션 롤백하면서 영속성 컨택스트 함께 종료하므로 문제가 없다. 
+2. **OSIV 사용 전략\(문제됨\)**  - 영속성 컨택스트 범위 &gt; 트랜잭션 범위일 경우 문제가 발생한다. 이유 - 롤백하고 남아있는 영속성 컨택스트에 이상이 발생해도 다른 컨택스트에서 그대로 사용할 수 있다. 해결방법 - EntityManger.clear\(\) 영속성 컨택스트 초기화 해주기.  doRollback 메소드를 참고하자?
+
+## 2. 엔티티 비교
+
+* 비교 방법 3가지 
+  * 동일성\(identical\): == 비교가 같다. 
+  * 동등성\(equivalent\): equals\(\) 비교가 같다. 
+  * 데이터베이스 동등성: @Id인 데이터베이스 식별자가 같다.  member.getld\(\).equals \(findMember.getld\(\)\) 
+
+```java
+Member member1 = em.find(Member.class, "1L");
+Member member2 = em.find(Member.class, "1L");
+assertTrue(member1 == member2); //둘은 같은 인스턴스다.
+// 같은 PC안에 있을때 동등성equals 비교 수준이 아니라 정말 주소값이 같은 인스턴스를 반환한다.
+```
+
+영속성 컨택스트가 같을때와 다를때 상황을 만들어 엔티티를 비교해보자.
+
+### 2.1 PC가 같을 때, 엔티티 비교
+
+* 위 3가지 모두 동일로 나온다.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2843%29.png)
+
+서비스를 통해 저장하고, 리포지토리에서 가져오면 같은 영속성 컨택스트에서 가져온다. 완전히 같은 인스턴스이다.
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath: appConfig.xml")
+@Transactional //트랜잭션 안에서 테스트를 실행한다.
+public class MemberServiceTest {
+    @Autowired MemberService memberservice;
+    @Autowired MemberRepository memberRepository;
+    @Test
+    
+    public void 회원가입 () throws Exception {
+    
+        //Given
+        Member member = new Member("kim");
+        
+        //When
+        Long saveld = memberService.join(member);
+        
+        //Then
+        Member findMember = memberRepository.fineOne(saveld)
+        assertTrue(member == findMember); //참조값 비교   
+    }
+}
+
+@Transactional
+public class MemberService {
+    @Autowired MemberRepository memberRepository;
+    
+    public Long join(Member member) {
+        memberRepository.save(member);
+        return member.getId();
+    }
+}
+
+@Repository
+public class MemberRepository {
+    @Persistencecontext
+    EntityManager em;
+    
+    public void save(Member member) {
+        em.persist(member);
+    }
+    
+    public Member findOne(Long id) {
+        return em.find(Member. class, id);
+    }
+}
+```
+
+### 2.2 PC가 다를 때, 엔티티 비교
+
+*  identical\(==\)에서 다르다고 나온다.
+* 실습 - 테스트 클래스 **`@Transactional`** 을 없애고 리포지토리에 **`@Transactional`**추가.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2844%29.png)
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath: appConfig.xml")
+//@Transactional 
+public class MemberServiceTest {
+    @Autowired MemberService memberservice;
+    @Autowired MemberRepository memberRepository;
+    @Test
+    
+    public void 회원가입 () throws Exception {
+    
+        //Given
+        Member member = new Member("kim");
+        
+        //When
+        Long saveld = memberService.join(member);
+        
+        //Then
+        Member findMember = memberRepository.fineOne (saveld)
+        assertTrue(member == findMember); // 실패
+    }
+}
+
+@Transactional
+public class MemberService {
+    @Autowired MemberRepository memberRepository;
+    
+    public Long join(Member member) {
+        //...
+        memberRepository.save(member);
+        return member.getld();
+    }
+}
+
+@Repository
+@Transactional //추가
+public class MemberRepository {
+    @Persistencecontext
+    EntityManager em;
+    
+    public void save(Member member) {
+        em.persist(member);
+    }
+    
+    public Member findOne (Long id) {
+        return em.find(Member. class, id);
+    }
+}
+```
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2850%29.png)
+
+지금처럼 영속성 컨텍스트가 달라지면 동일성 비교는 실패한다. 이때는 **데이터베이스 동등성 비교**를 사용해야 한다. 
+
+```java
+member.getld().equals(findMember.getld());
+```
+
+하지만 엔티티를 영속화해야 식별자를 얻어 비교할 수 있다는 문제가 있기에,  이때는 동등성 비교\(equals\(\)\)를 사용할 수 있다. 영속화 하기 전에는 null이다. 즉, 비즈니스키\(예.주민번호\)를 이용해 동등성 비교를 하자.
+
+## 3. 프록시 심화 주제
+
+프록시를 사용하는 방식의 예상하지 못한 문제들에 대해 알아보자.
+
+### 3.1 영속성 컨택스트와 프록시
+
+영속성 컨텍스트는 자신이 관리하는 영속 엔티티의 동일성\(identity\)을 보장한다.   
+그럼 **프록시로 조회한 엔티티의 동일성도 보장할까?** 
+
+```java
+@Test
+public void 영속성컨텍스트와_프록시 () {
+    Member newMember = new Member("member1", "회원 1");
+    em.persist(newMember);
+    em.flush();
+    em.clear();
+    
+    Member refMember = em.getReference(Member.class, "member1") ;
+    Member findMember = em.find(Member.class, "member1") ;
+    
+    System.out.println("refMember Type = " + refMember.getClass());
+    System.out.println("findMember Type = " + findMember.getClass());
+    
+    Assert.assertTrue(refMember == findMember); //성공
+}
+
+//결과
+//refMember Type = class jpabook.advanced.Member_$$_jvst843_0
+//findMember Type = class jpabook.advanced.Member_$$_jvst843_0
+// 둘다 프록시
+```
+
+영속성 컨텍스트는 프록시로 조회된 엔티티에 대해서 같은 엔티티를 찾는 요청이 오면, 원본 엔티티가 아닌 **처음 조회된 프록시를 반환**한다.  프록시로 조회해도 영속성 컨텍스트는 영속 엔티티의 동일성을 보장한다.
+
+엔티티 조회후 동일 엔티티를 프록시로 찾으면?
+
+프록시가 아닌 원본 엔티티가 반환된다. 이 경우에도, 영속성 컨텍스트는 엔티티의 동일성을 보장한다
+
+### 3.2 프록시 타입비교
+
+프록시로 조회한 엔티티의 타입을 비교할 때는, == 비교를 하면 안 되고, 대신에 **`instanceof`를 사용**해야 한다. 
+
+```java
+@Test
+public void 프록시_타입비교() {
+    Member newMember = new Member("member1", "회원 1");
+    em.persist(newMember);
+    em.flush();
+    em.clear();
+    
+    Member refMember = em.getReference(Member.class, "member1") ;
+    Member findMember = em.find(Member.class, "member1") ;
+    
+    System.out.println("refMember Type = " + refMember.getClass());
+    
+    Assert.assertFalse(Member.class == refMember.getClass()); //false
+    Assert.assertTrue(refMember instanceof Member); //true
+}
+
+//refMember Type = class jpabook.advanced.Member_$$_jvsteXXX
+// == 비교는 부모 클래스와 자식 클래스샘이 된다. 따라서 false.
+```
+
+### 3.3 프록시 동등성 비교
+
+equals\(\) 메소드로 엔티티를 비교할 때, 비교 대상이 원본 엔티티면 문제가 없지만 **프록시면 문제가 발생**할 수 있다.
+
+```java
+//IDE나 외부 라이브러리로 구현된 equals() 메소드
+@Entity
+public class Member {
+    @Id
+    private String id;
+    private String name;
+    public String getName() {return name;}
+    
+    public void setName(String name) {this.name = name;}
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;        
+        if (this.getClass() != obj.getClass()) return false; 
+        
+        Member member = (Member) obj;
+        
+        //name이 중복되는 회원은 없다고 가정한다.
+        if (name != null ? !name.equals(member.name) :
+            member.name != null) 
+            return false;
+            
+        return true;
+    }
+    
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
+}
+```
+
+```java
+@Test
+public void 프록시의_동등성비교() {
+    Member saveMember = new Member("member1", "회원1");
+    em.persist(saveMember);
+    em.flush();
+    em.clear();
+    
+    Member newMember = new Member("member1", "회원1");
+    Member refMember = em.getReference(Member.class, "member1");
+    
+    Assert.assertTrue( newMember.equals(refMember) );
+}
+```
+
+둘 다 회원1로 같으므로 동등성 비교를 하면 성공할 것 같다. 그러나 newMember.equals\(refMember\) 의 결과는 false가 나오면서 테스트가 실패한다. 
+
+**질문 - 왜 이런 문제가 발생하는 것 일까?**
+
+```java
+//변경후
+if (this.getClass() != obj.getClass()) return false; 
+//변경후
+if (!(tanceof obj.getClass! (obj instanceof Member)) return false; 
+```
+
+```java
+//변경후
+if (this.getClass() != obj.getClass()) return false; 
+//변경후
+if (!(obj instanceof Member)) return false; 
+```
+
+앞서 이야기한데로 프록시는 원본을 상속받은 자식 타입이므로 프록시의 타입을 비교할 때는 == 비교가 아닌 instanceof를 사용해야 한다.
+
+그리고 한가지 문제가 더 있다. equals \(\) 메소드를 구현할 때는 일반적으로 멤버변수를 직접 비교하는데，프록시의 경우는 문제가 된다. 프록시는 실제 데이터를 가지고 있지 않다. 따라서 프록시의 멤버변수에 직접 접근하면 아무값도 조회할 수 없다.  프록시의 데이터를 조회할 때, 접근자\(Getter\)를 사용해야 한다.
+
+```java
+//
+@Override
+public boolean equals(Object obj) {
+    //...
+    
+    if (name != null ? !name.equals(member.name) : member.name != null) 
+        return false;
+        
+    //...
+}
+
+//후
+@Override
+public boolean equals(Object obj) {
+    //...
+    
+    if (name != null ? !name.equals(member.getName()) : member.getName()!= null) 
+        return false;
+        
+    //...
+}
+```
+
+수정한 equals\(\) 전체 코드
+
+```java
+@Override
+public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;        
+    if ( !(obj instanceof Member) ) return false; 
+    
+    Member member = (Member) obj;
+    
+    if (name != null ? !name.equals(member.getName()) :
+        member.getName() != null) 
+        return false;
+        
+    return true;
+}
+```
+
+### 3.4  상속관계와 프록시 
+
+* 상속관계\(OrderItem&lt;-&gt;Item-Album, Movie, Book\)를 프록시로 조회할 때 발생할 수 있는 문제점
+* 프록시를 부모 타입으로 조회하면 부모의 타입을 기반으로 프록시가 생성되는 문제가 있다.
+  * instanceof 연산을 사용 x
+  * 하위 타입으로 다운캐스팅 x
+
+```java
+@Test
+public void 부모타입으로_프록시조회 (() {
+    Book savedBook = new Book();
+    savedBook.setName("jpabook");
+    savedBook.setAuthor("kim");
+    em.persist(savedBook);
+    em.flush();
+    em.clear();
+    
+    Item proxyItem = em.getReference(Item.class, savedBook.getId());
+    System.out.println("proxyitem = " + proxyitem.getClass());
+    
+    if (proxyitem instanceof Book) {
+        System.out.println("proxyitem instanceof Book");
+        Book book = (Book) proxyItem;
+        System.out.println("책 저자 = " + book.getAuthor());
+    }
+    
+    Assert.assertFalse( proxyitem.getClass() == Book.class );
+    Assert.assertFalse( proxyItem instanceof Book );
+    Assert.assertTrue( proxyItem instanceof Item );
+}
+```
+
+Book 타입이면 다운캐스팅해서 Book 타입으로 변경하고 저자 이름을 출력한다. 그런데 출력 결과를 보면  저자가 출력되지 않은 것을 알 수 있다.
+
+proxyltem Book이 아닌 Item 클래스를 기반으로 만들어졌다. 즉, proxyltem은 Item$Proxy 타입이고 Book 타입과 관계가 없다. 그래서 **`proxyitem instanceof Book`**가 false가 나온다. 
+
+만약 조건문이 없더라도, 다운 캐스팅에서 ClassCastException 에러가 난다.
+
+```java
+// 실무에서는 다형성을 다루는 도메인 모델에서 주로 발생. 
+// Lazy 로딩이어서 프록시로 조회됨.
+@Entity
+public class OrderItem {
+    //...    
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ITEM_ID")
+    private Item item;    
+    
+    //...
+}
+```
+
+#### 상속관계에서 발생하는 프록시 문제를 어떻게 해결해야 할까?
+
+* JPQL로 대상 직접 조회 
+* 프록시 벗기기 
+* 기능을 위한 별도 인터페이스 제공 
+* 비지터 패턴 사용
+
+> 궁금?   
+> 3,4 번째 중 어떤 것을 사용해야되는 걸까..?
+
+#### JPQL로 대상 직접 조회 
+
+이 방법을 사용하면 다형성을 활용할 수 없다.
+
+```java
+Book jpqlBook = em.createQuery
+    ("select b from Book b where b.id = :bookid", Book.class)
+    .setParameter("bookId", item.getId())
+    .getSingleResult();
+```
+
+#### 프록시 벗기기 
+
+하이버네이트가 제공하는 기능을 사용하면 프록시에서 원본 엔티티를 가져올 수 있다.   
+**`unProxy()`**
+
+```java
+//하이버네이트가 제공하는 프록시에서 원본 엔티티를 찾는 기능을 사용하는 메소드
+public static <T> T unProxy(Obj ect entity) {
+
+    if (entity instanceof HibernateProxy) {
+        entity = ((HibernateProxy) entity)
+                .getHibernateLazylnitializer()
+                .getlmplementation();
+    }
+    
+    return (T) entity;
+}
+
+//실행 코드 
+Item item = orderitem.getItem();
+Item unProxyitem = unProxy(item);
+if (unProxyitem instanceof Book) {
+    System.out.printin("proxyitem instanceof Book");
+    Book book = (Book) unProxyitem;
+    System.out.printin ( "책 저자 = " + book.getAuthor());
+}
+Assert.assertTrue(item != unProxyitem);
+}
+
+//결과 
+//proxyItem instanceof Book
+//책 저자 = shj
+```
+
+영속성 컨텍스트는 한 번 프록시로 노출한 엔티티는 계속 프록시로 노출한다. 그래야 영속성 컨텍스트가 영속 엔티티의 동일성을 보장 할 수 있기 때문이다. 그런데 **`unProxy()`** 프록시에서 원본 엔티티를 직접 꺼내기 때문에 프록 시와 원본 엔티티의 **동일성 비교가 실패한다는 문제점**이 있다.
+
+#### 기능을 위한 별도 인터페이스 제공 
+
+* 다형성을 활용하는 좋은 방법
+* 프록시의 대상이 되는 타입에 인터페이스를 적용해야 한다. 여기선 Item.
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2855%29.png)
+
+```java
+public interface Titleview {
+    String getTitle();
+}
+----------------------------------------------------------------
+@Entity
+public abstract class Item implements Titleview {
+    //...
+}
+----------------------------------------------------------------
+@Entity
+@DiscriminatorValue("B")
+public class Book extends Item {
+    //...
+    @Override
+    public String getTitle() {
+        return ""이;
+    }
+}
+----------------------------------------------------------------
+@Entity
+public class OrderItem {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ITEM_ID")
+    private Item item;
+    
+    public void printItem() {
+        System.out.println("TITLE="+item.getTitle());
+    }
+    //...
+}
+----------------------------------------------------------------
+OrderItem orderItem = em.find(OrderItem.class, saveOrderItem.getId() );
+orderItem.printItem();
+```
+
+다양한 상품 타입이 추가되어도 Item을 사용하는 OrderItem의 코드는 수정하지 않아도 되고, 클라이언트 입장에서 대상 객체가 프록시인지 아닌지를 고민하지 않아도 된다.
+
+#### 비지터 패턴 사용
+
+![&#xAE40;&#xC601;&#xD55C;, &#x300C;&#xC790;&#xBC14; ORM &#xD45C;&#xC900; JPA &#xD504;&#xB85C;&#xADF8;&#xB798;&#xBC0D;&#x300D;, &#xC5D0;&#xC774;&#xCF58;, 2015](../../../.gitbook/assets/image%20%2854%29.png)
+
+```java
+//1 인터페이스 정의
+public interface Visitor {
+    void visit(Book book);
+    void visit(Movie movie);
+    void visit(Album album);
+}
+
+----------------------------------------------------------------
+//2 Visitor의 구현 클래스
+public class PrintVisitor implements Visitor {
+    @Override
+    public void visit(Book book) {
+        //넘어오는 book은 Proxy가 아닌 원본 엔티티다.
+        System.out.println("book.class = " + book.getClass());
+        System.out.println(
+            " [Printvisitor] [제목:" + book.getName() + 
+            " 저자:" + book.getAuthor() + "] ");
+    }
+    
+    @Override
+    public void visit(Movie movie) {...}
+    @Override
+    public void visit(Album album) {...}
+}
+    
+public class TitleVisitor implements Visitor {
+    private String title;
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    @Override
+    public void visit(Book book) {
+        title = " [제목: " + book.getName() + " 저자: " +
+        book.getAuthor() + "] ";
+    }
+    @Override
+    public void visit(Movie movie) {...}       
+    @Override
+    public void visit(Album album) {...}
+}
+----------------------------------------------------------------
+//3  Book, Movie, Album 부모 클래스에 추상 메소드 추가 
+public abstract class Item {
+    //...
+    public abstract void accept(Visitor visitor);
+}
+----------------------------------------------------------------
+//4 서브클래스 오버라이드 추가 
+//자신(this)을 파라미터로 넘기는 것이 전부
+public class Book extends Item {
+    //..
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this); //this는 프록시가 아닌 원본 
+    }
+}
+public class Movie extends Item {
+    //..
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
+    }
+}
+public class Album extends Item {
+    //..
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
+    }
+}
+----------------------------------------------------------------
+//5 실행 코드 
+@Test
+public void 상속관계와_프록시_VisitorPattern () {
+    //orderItem-item의 fetchType 지연로딩
+    //OrderItem에 아이 Book이 담겼다 가정한.다 
+    OrderItem orderItem = em.find(OrderItem.class, orderItemId);
+    Item item = orderItem.getItem(); //item은 프록
+    
+    //Printvisitor
+    item.accept(new PrintVisitor());
+}
+
+//결과 
+//book.class = class jpabook.advanced.item.Book
+//[Printvisitor] [제목: jpabook 저자:kim]
+
+//설명
+//item은 프록시이므로 먼저 프록시(Proxyitem)가 accept() 메소드를 받고
+//원본 엔티티(book)의 accept()를 실행한다. 
+//원본 엔티티는 다음 코드를 실행해서 자신(this)을 visitor에 파리미터로 넘겨준다.
+//Book의 accept메소드의 this는 프록시가 아닌 원본 
+```
+
+TitleVisitor 클래스는 사용하지 않았는데, 비지터 패턴을 구현만 하면 확장이 가능하다는 것을 보여준다.
+
+* 성과
+  * 알고리즘과 객체 구조를 분리해서 구조를 수정하지 않고 새로운 동작을 추가 할 수 있다.
+  * 프록시에 대한 걱정 없이, 안전하게 원본 엔티티에 접근이 가능.
+  *  instanceof나 타입캐스팅 없이 코드를 구현.
+
+단점이 있다, 복잡하고 더블 디스패치를 사용하기 때문에 이해하기 어렵다고, 객체 구조가 변경되면 모든 Visitor를 수정해야 한다.
+
+## 4. 성능 최적화 
+
+### 4.1 N+1 문제
+
+\(생략\) 10장 질문으로 정리 해둠
+
+요약 - 지연로딩만 사용하고, 성능 최적화가 필요한 곳에만 페치조인 사용하자.  
+@OneToOne @ManyToOne은 지연로딩 명시하기.
+
+### 4.2 읽기 전용 쿼리의 성능 최적화
+
+엔티티가 영속성 컨텍스트에 관리되면 1차 캐시부터 변경 감지까지 얻을 수 있는 해택이 많다. 하지만 영속성 컨텍스트는 변경감지를 위해 스냅샷 인스턴스를 보관하므로 더 많은 메모리를 사용하는 단점이 있다. 이때는 읽기 전용으로 엔티티를 조회하면 메모리 사용량을 최적화할 수 있다.
+
+* 스칼라 타입으로 조회 
+* 읽기 전용 쿼리 힌트 사용
+* 읽기 전용트랜잭션 사용
+* 트랜잭션 밖에서 읽기
+
+#### 스칼라 타입으로 조회 
+
+```sql
+--영속성 컨텍스트가 관리하지 않는다.
+select o.id, o.name, o.price from Order p
+```
+
+#### 읽기 전용 쿼리 힌트 사용
+
+```sql
+//하이버네이트 전용 힌트
+//읽기 전용이므로 영속성 컨텍스트는 스냅삿을 보관하지 않는다. 
+TypedQuery<Order> query = em.createQuery("select o from Order o", Order.class);
+query.setHint("org.hibernate.readonly", true);
+```
+
+#### 읽기 전용트랜잭션 사용 - 스프링 프레임워크를 사용시 
+
+**`@Transactional(readonly = true)`**
+
+스프링 프레임워크가 하이버네이트 세션\(=JPA의 EM\)의 플러시 모드를 MANUAL로 설정한다. 이로써, 강제로 플러시를 호출하지 않는 한 플러시가 일어나지 않는다. 따라서 **트랜잭션을 커밋해도** **영속성 컨텍스트를 플러시하지 않는다.** 엔티티의 등록, 수정, 삭제는 동작하지 않지만,  플러시할 때 일어나는 스냅샷 비교와 같은 무거운 로직들을 수행하지 않으므로 성능이 향상된다. 참고로 JPA 플러시 설정에는 AUTO, COMMIT 두가지만 존재한다. 
+
+#### 트랜잭션 밖에서 읽기
+
+트랜잭션 없이 엔티티를 조회한다. JPA에서 데이터를 변경하려면 트랜잭션은 필수다. 따라서 조회가 목적일 때 한다.
+
+트랜잭션을 사용하지 않으면 플러시가 일어나지 않으므로 조회 성능이 향상된다.
+
+```sql
+@Transactional(propagation = Propagation.NOT_SUPPORTED) //Spring
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED) //J2EE
+```
+
+요약하자면, 읽기 전용 데이터를 조회할 때, 메모리를 최적화하려면 "스칼라 타입으로 조회"하거나 하이버네이트가 제공하는 "읽기 전용 쿼리 힌트"를 사용하면 되고, 플러시 호출을 막아서 속도를 최적화하려면 "읽기 전용 트랜잭션"을 사용하거나 "트랜잭션 밖에서 읽기"를 사용하면 된다.
+
+```sql
+//스프링 사용시 이상적인 방법
+@Transactional (readonly = true) //읽기 전용 트랜잭션 
+public List<DataEntity> findDatas() {
+    return em.createQuery("select d from DataEntity d", DataEntity.class)
+    .setHint("org.hibernate.readonly" , true) //읽기 전용 쿼리 힌트
+    .getResultList();
+}
+```
+
+### 4.3 배치 처리 
+
+영속성 컨텍스트에 아주 많은 엔티티가 쌓이면서 **메모리 부족 오류가 발생**한다. 따라서 이런 배치 처리는 일정 단위마다 영속성 컨텍스트의 엔티티를 데이터베이스에 플러시하고 영속성 컨텍스트를 초기화해야 한다.또한, 2차 캐시에 엔티티를 보관하지 않도록 주의해야 한다. \(16.2절 참고\)
+
+#### 등록 배치 처리  - 10만건 
+
+```sql
+EntityManager em = entityManagerFactory.createEntityManager();
+EntityTransaction tx = em.getTransaction();
+tx.begin();
+
+for (int i = 0; i < 100000; i++》 {
+    Product product = new Product("item" + i, 10000);
+    em.persist(product);
+    
+    //100건마다 플러시와 영속성 컨텍스트 초기화
+    if ( i % 100 == 0 ) {
+        em.flush();
+        em.clear();
+    }
+}
+
+tx.commit();
+em.close ();
+```
+
+#### 수정 배치 처리 
+
+* 페이징 처리: 데이터베이스 페이징 기능을 사용한다. 
+* 커서: 데이터베이스가 지원하는 커서 기능을 사용한다
+
+```java
+// case 1 : 페이징 
+EntityTransaction tx = em.getTransaction();
+tx.begin();
+
+int pageSize = 100;
+
+for (int i = 0; i < 10; i++) {
+    List<Product> resultList = 
+        em.createQuery("select p from Product p", Product.class)
+        .setFirstResult(i * pageSize)
+        .setMaxResults(pageSize)
+        .getResultList();
+                        
+    //비즈니스 로직 실행
+    for (Product product : resultList) {
+        product.setPrice(product.getPrice() + 100);
+    }
+    em.flush();
+    em.clear();
+}
+
+tx.commit();
+em.close();
+----------------------------------------------------------------
+// case 2 : 커서 
+// JPA는 JDBC 커서를 지원하지 않는다. 
+// 따라서 커서를 사용하려면 하이버네이트 세션session을 사용한다.
+// Session session = entityManager.unwrap(Session.class); 이렇게 사용.
+EntityTransaction tx = em.getTransaction();
+Session session = em.unwrap(Session.class);
+tx.begin();
+
+ScrollableResults scroll = 
+        session.createQuery("select p from Product p")
+        .setCacheMode(CacheMode. IGNORE) // 2차 캐시 기능을 끈다.
+        .scroll(ScrollMode.FORWARD_ONLY);
+
+int count = 0;
+
+while (scroll.next()) { // 엔티티를 하나씩 조회
+    Product p = (Product) scroll.get(0);
+    p.setPrice(p.getPrice() + 100);
+    
+    count++；
+    if (count % 100 == 0) {
+        session.flush(); //를러시
+        session.clear(); //영속성 컨텍스트 초기화
+    }
+}
+tx.commit();
+session.close();
+----------------------------------------------------------------
+// case 3
+// 하이버네이트의 무상태 세션 사용
+// 영속성 컨텍스트를 만들지 않고 심지어 2차 캐시도 사용하지 않는다. 
+// 무상태 세션은 영속성 컨텍스트가 없다. 
+// 따라서 영속성 컨텍스트를 플러시하거나 초기화하지 않아도 된다.
+SessionFactory sessionFactory =
+    entityManagerFactory.unwrap(SessionFactory.class);
+StatelessSession session = sessionFactory.openStatelessSession();
+Transaction tx = session.beginTransaction();
+ScrollableResults scroll = 
+    session.createQuery("select p from Product p").scroll();
+    
+while (scroll.next()) {
+    Product p = (Product) scroll.get(0);
+    p.setPrice(p.getPrice() + 100);
+    session.update(p) ; "직접 update# 호출해야 한다.
+}
+
+tx.commit();
+session.close();
+```
+
+### 4.4 SQL 쿼리 힌트 사용 
+
+* JPA는 데이터베이스 SQL 힌트 기능을 제공하지 않는다. 
+* 하이버네이트를 직접 사용해야 한다. 
+* 데이터베이스 벤더에게 제공하는 힌트이다.
+
+```java
+Session session = em.unwrap(Session.class); //하이버네이트 직접 사용
+List<Member> list = 
+    session.createQuery("select m from Member m")
+    .addQueryHint("FULL (MEMBER) ") //SQL HINT 추가
+    .list();
+
+//실행된 SQL
+select
+    /*+ FULL (MEMBER) */ m.id, m.name
+from
+    Member m
+```
+
+하이버네이트 4.3.10 버전에는 오라클 방언에만 힌트가 적용되어 있다. 다른 데이터베이스에서 SQL 힌트를 사용하려면 각 방언에서 **`org.hibernate.dialect.Dialect`**에 있는 다음 메소드를 오버라이딩해서 기능을 구현해야 한다.
+
+```java
+public String getQueryHintString(String query, List<String> hints) {
+    return query;
+}
+```
+
+### 4.5 트랜잭션을 지원하는 쓰기지연과 성능최적화 
+
+INSERT 5번 + COMMIT 1번 = 총 6번 데이터베이스와 통신
+
+```java
+insert(memberl); //INSERT INTO ...
+insert(member2); //INSERT INTO ...
+insert(member3); //INSERT INTO ...
+insert(member4); //INSERT INTO ...
+insert(member5); //INSERT INTO ...
+```
+
+한번에 모아서 보내려면?
+
+JDBC가 제공하는 SQL 배치기능을 사용하면 SQL을 모아서 데이터베이스에 한 번에 보낼 수 있다. 하지만 이 기능을 사용하려면 코드의 많은 부분을 수정해야해 비즈니로직이 복잡하면 난감할 수 있다. 그래서 보통은 수백 수천 건 이상의 데이터를 변경하는 특수한 상황에 SQL 배치 기능을 이용한다.
+
+```java
+// 50건씩 모아서 SQL 배치를 실행
+<property name="hibernate.jdbc.batch_size" value="50"/>
+
+// 조심 - 중간에 다른 처리가 들어가면 SQL 배치를 다시 시작한다.
+// 총 3번의 배치 실행
+em.persist(new Member()); //1
+em.persist(new Member()); //2
+em.persist(new Member()); //3
+em.persist(new Member()); //4
+em.persist(new Child()); //5 다른 연
+em.persist(new Member()); //6
+em.persist(new Member()); //7
+```
+
+참고로, Member 엔티티의 ID 생성전략이 IDENTITY였으면, persist\(\) 호출시 데이터베이스와 즉시 통신해버린다. \(데이터베이스에 저장해야 식별자를 구할 수 있.다.\)
+
+트랜잭션을 커밋해서 영속성 컨텍스트를 플러시하기 전까지는 데이터 베이스에 데이터를 등록, 수정, 삭제하지 않는다. 따라서 커밋 직전까지 DB 로우에 락을 걸지 않는다.
+
+```java
+// 이런 로직이 있다면
+update(memberA); //UPDATE SQL A
+비즈니스로직AO; //UPDATE SQL ...
+비즈니스로직B(); //INSERT SQL
+commit();
+```
+
+즉, 쓰기지연 + 변경감지 = DB 로우에 락이 걸리는 시간 최소화 된다.
+
+보통 많이 사용하는 커밋된 읽기\(Read\_Committed \)격리 수준이나 그 이상에서는 데이터베이스에 현재 수정중인 데이터\(로우\)를 수정하려는 다른 트랜잭션은 락이 풀릴 때까지 대기한다. 만약 update\(memberA\)에서 바로 걸고 다면 16.1절 참고.
+
+다음 장에서는 트랜잭션과 락에 대해 알아보고, 애플리케이션 레벨의 캐시도 알아보자.
+
