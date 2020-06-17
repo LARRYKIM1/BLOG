@@ -1,3 +1,7 @@
+---
+description: '김영한 저 "자바 ORM 표준 JPA 프로그래밍, 2015"을 읽고 정리한 내용입니다.'
+---
+
 # 실습
 
 ## RollbackException 예외
@@ -111,9 +115,18 @@ public class Customer {
 
 ![Antonio Goncalves, &#x300C;Understanding JPA 2.2&#x300D;, Amazon KDP, 2019 ](../../../.gitbook/assets/image%20%2856%29.png)
 
+## LockTimeoutException 예외
 
+비관적 락을 사용할때,  무한정 기다릴 수 없으므로 타임아웃 시간을 줄 수 있다.
 
+```java
+Map<String,Object> properties = new HashMap<String,Object>();
 
+//타임아웃 10초까지 대기 설정
+properties.put ("javax.persistence. lock. timeout", 10000);
+Board board = em.find(Board.class, "boardId",
+        LockModeType.PESSIMISTIC_WRITE, properties);
+```
 
 ## 참고문헌 
 
