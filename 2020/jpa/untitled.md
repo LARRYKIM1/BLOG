@@ -33,7 +33,7 @@
 
 기본적으로 첫번째가 많이 사용되고, 상황에 따라 두번째가 합리적일 수 있다.
 
-### @Version
+### 1.1 @Version
 
 * 낙관적 락을 사용하기 위한 어노테이션
 * 적용가능 타입
@@ -59,7 +59,7 @@ WHERE
     AND VERSION=? (버전 비교) 
 ```
 
-### JPA 락 사용
+### 1.2 JPA 락 사용
 
 * JPA 사용시 추천 전략 
   * READ COMMITTED + 낙관적 버전 관리 
@@ -79,17 +79,45 @@ em.lock(board, LockModeType.OPTIMISTIC);
 ```
 
 * LockModeType 종류 
-
   * OPTIMISTIC / OPTIMISTIC\_FORCE\_INCREMENT 
   * PESSIMISTIC\_WRITE / PESSIMISTIC\_READ / PESSIMISTIC\_FORCE\_INCREMENT 
   * NONE / READ / WRITE
 
-* 낙관적 락은 트랜잭션을 **커밋하는 시점에 충돌을 알수 있다. ``**
-* 락 옵션 없이 @Version만 있어도 낙관적 락이 적용된다.
+#### 1.2.1 낙관적 락 
 
+* OPTIMISTIC 
+  * 엔티티를 조회만 해도 버전을 확한다.
+  * 한 번 조회한 엔티 티는 트랜잭션을 종료할 때까지 다른 트랜잭션에서 변경하지 않음을 보장한다.
+  * 낙관적 락은 트랜잭션을 커밋하는 시점에 충돌을 알수 있다. ``
 
+```java
+Board board = em.find(Board.class, id, LockModeType.OPTIMISTIC);
 
+//중간에 다른 트랜잭션에서 동일 게시물을 수정해서 버전 증가 발생
 
+//커밋 시점에 버전 정보 검증, 예외 발생
+//(데이터베이스 version=2, 엔티티 version=1)
+tx.commit();
+```
+
+* OPTIMISTIC\_FORCE\_INCREMENT 
+  * 엔티티를 수정하지 않아도 트랜잭션을 커밋할 때 UPDATE 쿼리를 사용해서 버전 정보를 강제로 증가시킨다. 이때 데이터베이스의 버전이 엔티티의 버전 과 다르면 예외가 발생한다. 
+  * 추가로 엔티티를 수정하면 수정시 버전 UPDATE 가 발생한다. 따라서 총 2번의 버전 증가가 나타날 수 있다.
+  * 예, Aggregate Root는 수정하지 않았지만 Aggregate Root가 관리하는 엔티티를 수정했을 때 Aggregate Root의 버전을 강제로 증가시킬 수 있다.
+
+#### 1.2.2 비관적 락 
+
+발생가능 예외  
+**`PessimisticLockingFailureException (스프링 추상화 예외)`** **`PessimisticLockException`**
+
+* PESSIMISTIC\_WRITE 
+  * 비관적 락이라 하면 일반적으로 이 옵션을 뜻한다.
+  * 쓰기 락을 걸 때 사용
+  * NON-REPEATABLE READ를 방지한다. 즉, 락이 걸린 로우는 다른 트랜잭션이 수정할 수 없다.
+* PESSIMISTIC\_READ 
+  * 반복 읽기만 하고 수정하지 않는 용도로 락을 걸 때 사용한다.
+*  PESSIMISTIC\_FORCE\_INCREMENT
+  * 비관적 락중 유일하게 버전 정보를 사용한다
 
 ## 2. 2차 캐시
 
