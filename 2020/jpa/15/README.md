@@ -342,64 +342,20 @@ public class Member {
     public int hashCode() {
         return name != null ? name.hashCode() : 0;
     }
-}
+}   
 ```
 
 ```java
-@Test
-public void 프록시의_동등성비교() {
-    Member saveMember = new Member("member1", "회원1");
-    em.persist(saveMember);
-    em.flush();
-    em.clear();
-    
-    Member newMember = new Member("member1", "회원1");
-    Member refMember = em.getReference(Member.class, "member1");
-    
-    Assert.assertTrue( newMember.equals(refMember) );
-}
+Assert.assertTrue( newMember.equals(refMember) ); // false
 ```
-
-둘 다 회원1로 같으므로 동등성 비교를 하면 성공할 것 같다. 그러나 newMember.equals\(refMember\) 의 결과는 false가 나오면서 테스트가 실패한다. 
 
 **질문 - 왜 이런 문제가 발생하는 것 일까?** 
-
-```java
-//변경
-if (this.getClass() != obj.getClass()) return false; 
-//변경후
-if (!(obj instanceof Member)) return false; 
-```
 
 앞서 이야기한데로 프록시는 원본을 상속받은 자식 타입이므로 프록시의 타입을 비교할 때는 == 비교가 아닌 instanceof를 사용해야 한다.
 
 그리고 한가지 문제가 더 있다. equals \(\) 메소드를 구현할 때는 일반적으로 멤버변수를 직접 비교하는데, 프록시의 경우는 문제가 된다. 프록시는 실제 데이터를 가지고 있지 않다. 따라서 멤버변수에 직접 접근하지 말고 접근자\(Getter\)를 사용해야 한다..
 
-```java
-//
-@Override
-public boolean equals(Object obj) {
-    //...
-    
-    if (name != null ? !name.equals(member.name) : member.name != null) 
-        return false;
-        
-    //...
-}
-
-//후
-@Override
-public boolean equals(Object obj) {
-    //...
-    
-    if (name != null ? !name.equals(member.getName()) : member.getName()!= null) 
-        return false;
-        
-    //...
-}
-```
-
-수정한 equals\(\) 전체 코드
+#### 수정한 equals\(\) 전체 코드
 
 ```java
 @Override
