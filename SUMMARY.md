@@ -4,6 +4,9 @@
 
 ## 스터디 모임 <a id="2020"></a>
 
+* [OBJECT](2020/object/README.md)
+  * [\#01 객체, 설계](2020/object/01.md)
+  * [\#02 객체지향 프로그래밍](2020/object/02.md)
 * [JPA](2020/jpa/README.md)
   * [\#03 영속성 관리](2020/jpa/03-jpa.md)
   * [\#04 엔티티 매핑 - 발표](2020/jpa/04-entity-mapping.md)
