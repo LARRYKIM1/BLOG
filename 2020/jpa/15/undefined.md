@@ -2,7 +2,7 @@
 description: '김영한 저 "자바 ORM 표준 JPA 프로그래밍, 2015"을 읽고 정리한 내용입니다.'
 ---
 
-# 실습
+# \#15 예외 실습
 
 ## RollbackException 예외
 

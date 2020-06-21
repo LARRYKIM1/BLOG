@@ -26,7 +26,8 @@
   * [\#13 웹어플리케이션과 영속성 관리](2020/jpa/13/README.md)
     * [\#13 OSIV 실습](2020/jpa/13/13-osiv.md)
   * [\#15 고급주제와 성능최적화](2020/jpa/15/README.md)
-    * [실습](2020/jpa/15/undefined.md)
+    * [\#15 부모-자식 프록시 실습](2020/jpa/15/15.md)
+    * [\#15 예외 실습](2020/jpa/15/undefined.md)
   * [\#16 트랜잭션과 락, 2차캐시](2020/jpa/untitled.md)
 
 ## 대학원 <a id="undefined-1"></a>
