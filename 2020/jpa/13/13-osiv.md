@@ -2,7 +2,7 @@
 
 {% embed url="https://github.com/Incheol-Jung/jpa-repository-test" %}
 
-스터디원 인철님의  기텁을 보고 실행하였습니다. 
+스터디원 인철님의  기텁을 따라해보고 작하였습니다. 
 
 ## 디렉토리 구조
 
