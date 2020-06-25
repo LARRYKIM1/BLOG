@@ -220,7 +220,7 @@ em.createQuery("select a from TestEntity e where e.id = :id", TestEntity.class)
 
 * JPA는 캐시를 관리하기 위한 javax.persistence.Cache 인터페이스를 제공
 
-#### **하이버네이트와 EHCACHE 적용**
+### **하이버네이트와 EHCACHE 적용**
 
 * 하이버네이트가 지원하는 캐시
   * 엔티티 캐시 / 컬렉션 캐시 / 쿼리 캐시 
