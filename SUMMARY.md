@@ -8,7 +8,7 @@
   * [\#01 객체, 설계](2020/object/01.md)
   * [\#02 객체지향 프로그래밍](2020/object/02.md)
 * [Effective Java](2020/effective-java/README.md)
-  * [\# \[1장\] 아이템1-9](2020/effective-java/1-1-9.md)
+  * [\# \[1주차\] 아이템1-6](2020/effective-java/1-1-9.md)
 * [JPA](2020/jpa/README.md)
   * [\#03 영속성 관리](2020/jpa/03-jpa.md)
   * [\#04 엔티티 매핑 - 발표](2020/jpa/04-entity-mapping.md)
