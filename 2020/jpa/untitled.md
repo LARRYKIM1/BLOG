@@ -50,10 +50,10 @@ description: '김영한 저 "자바 ORM 표준 JPA 프로그래밍, 2015"을 읽
   * 즉, 커밋하는 시점에 충돌을 알수 있다.
 * 옵션 OPTIMISTIC을 추가  하면 엔티티를 조회만 해도 버전을 체크한다.
 * 임베디드 타입과 값 타입 컬렉션은 논리적인 개념상 해당 엔티티의 값이므로, 수정하면 엔티티의 버전 이 증가한다. 멤버:주소 -&gt; 주소 변경시, 멤버 버전 증가.
-* 벌크 연산은 버전을 무시한다. 딸라서 버전을 증가하려면 버전 필드를 강제로 증가시켜야 한다.
+* 벌크 연산은 버전을 무시한다. 따라서 버전을 증가하려면 버전 필드를 강제로 증가시켜야 한다.
 
 ```sql
-// WHERESET에 버전 조건을 건다. 동일하지 않으면 예외발생.
+// WHERE에 버전 조건을 건다. 동일하지 않으면 예외발생.
 UPDATE BOARD
 SET
     TITLE=?,
@@ -89,10 +89,13 @@ em.lock(board, LockModeType.OPTIMISTIC);
 
 #### 1.2.1 낙관적 락 
 
+발생가능 예외  
+**`OptimisticLockException` `StaleObjectStateException`** **`ObjectOptimisticLockingFailureException`**
+
 * OPTIMISTIC 
   * 엔티티를 조회만 해도 버전을 확한다.
-  * 한 번 조회한 엔티 티는 트랜잭션을 종료할 때까지 다른 트랜잭션에서 변경하지 않음을 보장한다.
-  * 낙관적 락은 트랜잭션을 커밋하는 시점에 충돌을 알수 있다. ``
+  * 한 번 조회한 엔티티는 트랜잭션을 종료할 때까지 다른 트랜잭션에서 변경하지 않음을 보장한다.
+  * 낙관적 락은 트랜잭션을 커밋하는 시점에 충돌을 알수 있다.
 
 ```java
 Board board = em.find(Board.class, id, LockModeType.OPTIMISTIC);
@@ -105,7 +108,7 @@ tx.commit();
 ```
 
 * OPTIMISTIC\_FORCE\_INCREMENT 
-  * 엔티티를 수정하지 않아도 트랜잭션을 커밋할 때 UPDATE 쿼리를 사용해서 버전 정보를 강제로 증가시킨다. 이때 데이터베이스의 버전이 엔티티의 버전 과 다르면 예외가 발생한다. 
+  * 엔티티를 수정하지 않아도 트랜잭션을 커밋할 때 UPDATE 쿼리를 사용해서 버전 정보를 강제로 증가시킨다. 이때 데이터베이스의 버전이 엔티티의 버전과 다르면 예외가 발생한다. 
   * 추가로 엔티티를 수정하면 수정시 버전 UPDATE 가 발생한다. 따라서 총 2번의 버전 증가가 나타날 수 있다.
   * 예, Aggregate Root는 수정하지 않았지만 Aggregate Root가 관리하는 엔티티를 수정했을 때 Aggregate Root의 버전을 강제로 증가시킬 수 있다.
 
@@ -167,9 +170,74 @@ persistence.xml 사용시
 * shared-cache-mode 속성
   * ALL / NONE / ENABLE\_SELECTIVE / DISABLE\_SELECTIVE / UNSPECIFIED
 
+**캐시 조회 저장 방식 설정**
 
+* 캐시를 무시하고 데이터베이스를 직접 조회하거나 캐시를 갱신하려면 캐시 조회 모드와 캐시 보관 모드를 사용
+* 캐시 조회 모드
+  * retrieveMode\(프로퍼티\), CacheRetrieveMode\(설정 옵션\)
+* 캐시 보관 모드
+  * storeMode\(프로퍼티\), CacheStoreMode\(설정 옵션\)
+* 캐시 모드 
+  * 1. em.setProperty\(\) - 엔티티 매니저 단위로 설정
+  * 2. em.find\(\), em.refresh\(\)에 설정
+  * 3. Query.setHint\(\) 사용
 
+```java
+//캐시 조회 모드
+public enum CacheRetrieveMode {
+  USE,    // 캐시에서 조회
+  BYPASS  // 캐시를 무시하고 데이터베이스에 직접 접근
+}
+------------------------------------------------------------
+//캐시 보관 모드
+public enum CacheStoreMode {
+  USE,        // 조회한 데이터를 캐시에 저장. 이미 캐시에 있으면 최신 상태로 갱신하지 않음. 
+              // 트랜잭션 커밋시 등록 수정한 엔티티도 캐시에 저장
+  BYPASS,     // 캐시에 저장하지 않는다
+  REFRESH     // USE 전략에 추가로 데이터베이스에서 조회한 엔티티를 최신 상태로 다시 캐시
+}
+------------------------------------------------------------
+//캐시 모
+// 1. em.setProperty()
+em.setProperty("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+em.setProperty("javax.persistence.cache.storeMode", CacheStoreMode.BYPASS);
 
+// 2. em.find()
+Map<String, Object> param = new HashMap<String, Object>();
+param.put("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+param.put("javax.persistence.cache.storeMode", CacheStoreMode.BYPASS);
+em.find(TestEntity.class, id, param);
 
+// 3. Query.setHint()
+em.createQuery("select a from TestEntity e where e.id = :id", TestEntity.class)
+  .setParameter("id", id);
+  .setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+  .setHint("javax.persistence.cache.storeMode", CacheStoreMode.BYPASS);
+  .getSingleResult();
+```
 
+**JPA 캐시 관리 API**
+
+* JPA는 캐시를 관리하기 위한 javax.persistence.Cache 인터페이스를 제공
+
+#### **하이버네이트와 EHCACHE 적용**
+
+* 하이버네이트가 지원하는 캐시
+  * 엔티티 캐시 / 컬렉션 캐시 / 쿼리 캐시 
+* 환경설정 
+  * pom.xml에 hibernate-ehcache 라이브러리 추가
+  * src/main/resources/ehcache.xml 설정 파일 추가 
+    * 캐시 보관 기간, 캐시 보관 크기 등의 캐시 정책 설정
+  * persistence.xml에 캐시 사용정보 설정
+* 부모는 엔티티 캐시 적용, 자식들은 컬렉션 캐시 적용
+* 엔티티 캐시 영역은 \[패키지 명 + 클래스 명\]
+* 컬렉션 캐시 영역은 \[패키지 명 + 클래스 명 + 필드 명\]의 기본값을 가진다.
+* 쿼리 캐시는 활성화하면 두 캐시 영역이 추가된다.\(StandardQueryCache, UpdateTimestampsCache\) 캐시한 데이터 집합을 최신 데이터로 유지하려고 쿼리 캐시를 실행하는 시간과 테이블들이 가장 최근에 변경된 시간을 비교하여 변경이 있으면 데이터베이스에서 데이터를 읽어와 쿼리 결과를 다시 캐시 한다. 따라서 수정이 적은 테이블에 사용해야 효과적이다.
+
+**쿼리 캐시와 컬렉션 캐시의 주의점**
+
+* 엔티티 캐시는 엔티티 정보를 모두 캐시, 쿼리 캐시와 컬렉션 캐시는 결과 집합의 식별자 값만 캐시
+* 쿼리 캐시와 컬렉션 캐시는 식별자 값을 하나씩 엔티티 캐시에서 조회해서 실제 엔티티를 찾는다
+* 엔티티에 쿼리 캐시나 컬렉션 캐시만 사용하고 엔티티 캐시를 적용하지 않으면 결과 집합만큼 SQL을 실행하는 성능 문제가 발생할 수 있다
+* 쿼리 캐시나 컬렉션 캐시 사용시 꼭 엔티티 캐시를 적용해야 함
 
