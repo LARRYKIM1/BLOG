@@ -5,7 +5,8 @@
 ## 스터디 모임 <a id="2020"></a>
 
 * [OBJECT](2020/object/README.md)
-  * [\#01 객체, 설계](2020/object/01.md)
+  * [\#01 객체, 설계](2020/object/01/README.md)
+    * [\#01 실습](2020/object/01/01-1.md)
   * [\#02 객체지향 프로그래밍](2020/object/02.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\# \[1주차\] 아이템1-6](2020/effective-java/1-1-9.md)
