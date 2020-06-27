@@ -1,5 +1,9 @@
 # Git 명령어
 
+## status
+
+* git status -s 짧게 보기
+
 ## init 
 
 * git reset — hard HEAD && git pull : git 코드 강제로 모두 받아오기
