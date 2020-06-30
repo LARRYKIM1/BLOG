@@ -8,6 +8,7 @@
   * [\#01 객체, 설계](2020/object/01/README.md)
     * [\#01 실습](2020/object/01/01-1.md)
   * [\#02 객체지향 프로그래밍](2020/object/02.md)
+  * [\#03](2020/object/03.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\# \[1주차\] 아이템1-6](2020/effective-java/1-1-9.md)
 * [JPA](2020/jpa/README.md)
@@ -73,10 +74,10 @@
 ## IT 공부
 
 * [Modern Java in Action](it/modern-java-in-action/README.md)
-  * [Untitled](it/modern-java-in-action/untitled.md)
   * [\# 1장 자바 8, 9, 10 그리고 11에는 무슨일이 일어나고 있는가?](it/modern-java-in-action/1-8-9-10-11.md)
   * [\# 2장 동작 파라미터화로 코드 넘기기](it/modern-java-in-action/2.md)
   * [\# 3장 람다 표현식](it/modern-java-in-action/3.md)
+  * [\# 4장스트림 소개](it/modern-java-in-action/untitled.md)
 * [Pro Git](it/pro-git/README.md)
   * [Untitled](it/pro-git/untitled.md)
 * [Effective Java](it/effective-java/README.md)
