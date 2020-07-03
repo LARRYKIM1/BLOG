@@ -5,10 +5,12 @@
 ## 스터디 모임 <a id="2020"></a>
 
 * [OBJECT](2020/object/README.md)
-  * [\#01 객체, 설계](2020/object/01/README.md)
+  * [GITHUB](2020/object/github.md)
+  * [\#01장 객체, 설계](2020/object/01/README.md)
     * [\#01 실습](2020/object/01/01-1.md)
-  * [\#02 객체지향 프로그래밍](2020/object/02.md)
-  * [\#03](2020/object/03.md)
+  * [\#02장 객체지향 프로그래밍](2020/object/02.md)
+  * [\#03장](2020/object/03.md)
+  * [\# 04장 설계 품질과 트레이드 오프](2020/object/04.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\# \[1주차\] 아이템1-6](2020/effective-java/1-1-9/README.md)
     * [발표 코드](2020/effective-java/1-1-9/undefined.md)
