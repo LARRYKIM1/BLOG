@@ -11,6 +11,7 @@
   * [\#02장 객체지향 프로그래밍](2020/object/02.md)
   * [\#03장 역할, 책임, 협력](2020/object/03.md)
   * [\# 04장 설계 품질과 트레이드 오프](2020/object/04.md)
+  * [\# 05장 책임 할당하기](2020/object/05.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\# \[1주차\] 아이템1-6](2020/effective-java/1-1-9/README.md)
     * [발표 코드](2020/effective-java/1-1-9/undefined.md)
