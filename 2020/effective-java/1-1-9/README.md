@@ -2,7 +2,7 @@
 description: 'Joshua Bloch 저  이복연 역  「Effective Java 3rd Edition, 2018」를 읽고 정리하였습니다.'
 ---
 
-# \# \[1주차\] 아이템1-6
+# \[1주차\] 1-6
 
 ## 아이템 01: 생성자 대신 정적 패토리 메서드를 고려하라. - 발표
 
