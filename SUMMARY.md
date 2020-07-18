@@ -18,7 +18,7 @@
   * [\# 08장 의존성 관리하기](2020/object/08.md)
   * [\# 09장 유연한 설계](2020/object/09.md)
   * [\# 10장](2020/object/10.md)
-  * [\# 11장](2020/object/11/README.md)
+  * [\# 11장 합성과 유연한 설계](2020/object/11/README.md)
     * [11장 사진](2020/object/11/11-1.md)
   * [\# 13장 서브클래싱과 서브타이핑 - 발표](2020/object/13/README.md)
     * [실습](2020/object/13/undefined.md)
