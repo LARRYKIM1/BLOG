@@ -15,6 +15,7 @@
   * [\# 06장](2020/object/06.md)
   * [\# 07장 객체 분해](2020/object/07.md)
   * [\# 08장 의존성 관리하기](2020/object/08.md)
+  * [\# 09장 유연한 설계](2020/object/09.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\[1주차\] 1-6](2020/effective-java/1-1-9/README.md)
     * [발표 코드](2020/effective-java/1-1-9/undefined.md)
