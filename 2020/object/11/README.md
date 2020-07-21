@@ -142,7 +142,7 @@ public class PersonalPlaylist {
 
 #### 기본정책과 부가정책 조합하기
 
-![](../../../.gitbook/assets/image%20%28133%29.png)
+![](../../../.gitbook/assets/image%20%28135%29.png)
 
 기본과 부가의 조합 경우의 수가 많을 것이다.
 
@@ -150,7 +150,7 @@ public class PersonalPlaylist {
 
 코드는 아래있다.
 
-![](../../../.gitbook/assets/image%20%28135%29.png)
+![](../../../.gitbook/assets/image%20%28137%29.png)
 
 #### 기본정책에 세금정책 조합하기
 
@@ -162,7 +162,7 @@ public class PersonalPlaylist {
 
 확장을 하다보니 위의 UML이 아래와 같이 변햇다..
 
-![](../../../.gitbook/assets/image%20%28128%29.png)
+![](../../../.gitbook/assets/image%20%28130%29.png)
 
 무리한 상속 \(코드는 두경우만 가져와봤다\)  
 Phone - RegularPhone - TaxableRegularPhone   
@@ -265,17 +265,17 @@ public class TaxableNightlyDiscountPhone extends NightlyDiscountPhone {
 
 코드는 맨아래 있다.
 
-![](../../../.gitbook/assets/image%20%28130%29.png)
+![](../../../.gitbook/assets/image%20%28132%29.png)
 
 #### 부가 정책 적용하기
 
-![](../../../.gitbook/assets/image%20%28134%29.png)
+![](../../../.gitbook/assets/image%20%28136%29.png)
 
 #### 기본 정책과 부가 정책 합성하기
 
 #### 새로운 정책 추가하기
 
-![](../../../.gitbook/assets/image%20%28132%29.png)
+![](../../../.gitbook/assets/image%20%28134%29.png)
 
 #### 객체 합성이 클래스 상속보다 더 좋은 방법이다.
 
@@ -288,7 +288,7 @@ public class TaxableNightlyDiscountPhone extends NightlyDiscountPhone {
 
 코드를 재사용할 수 있는 한가지 기법을 더 살펴보자. **믹스인**. 상속과 합성의 특성을 모두 보유한 톡특한 방법.
 
-## 4 믹스인
+## 4 믹스인 = abstract subclass
 
 객체를 생성할 때 코드 일부를 클래스 안에 섞어 넣어 재사용하는 기법. 믹스인은 코드 재사용에 특화된 방법이면서 상속과 같은 결합도 문제를 초래하지 않는다.
 
@@ -304,7 +304,21 @@ public class TaxableNightlyDiscountPhone extends NightlyDiscountPhone {
 
 #### 부가 정책 트레이드 믹스인 하기
 
+![](../../../.gitbook/assets/image%20%28129%29.png)
+
+![](../../../.gitbook/assets/image%20%28127%29.png)
+
 #### 쌓을 수 있는 변경
 
+BasicRatePolicy의 calculateFee 메서드의 **기능을 확장**하기 위해 믹스인을 사용 해봤다. **믹스인은** 상속 계층 안에서 확장한 클래스보다 **더 하위에 위치**한다. 다시말해 대상 클래스의 **자식 클래스처럼 사용될 용도**로 만들어진 것이다.
 
+> 서브클래스에서는 슈퍼클래스를 명시해야 하지만 반대는 그렇지 않기에 비대칭적이다. 그래서 믹스인은 슈퍼클래스로부터 상속될 클래스를 명시하는 매커니즘을 표현한다.
+
+믹스인 특징 - stackable modification
+
+스칼라에서 트레이트는 코드 재사용 근간을 이루는 단위다. 트레이트로 메서드와 필드 정의를 캡슐화하면 트레이트를 조합한 클래스에서 그 메서드나 필드를 재사용할 수 있다. 클래스와 트레이트의 차이는, 클래스는 super 호출을 정적으로 바인딩하지만, 트레이트는 동적으로 바인딩한다. 그래서 특징인 stackable modification이 가능해진다.
+
+[참고](https://stackoverflow.com/questions/17987704/an-example-of-a-mixin-in-java)
+
+자바에서 Comparable가 상호 비교가능한 객체들의 정렬된 인스턴스 선언을 허락하는 믹스인 인터페이스이다. 선택적인 기능을 허락하기에 믹스인이라 불린다. 참고로, 추상클래스는 믹스인 정의가 안된다. **뭔말?**
 
