@@ -24,6 +24,7 @@
   * [\# 13장 서브클래싱과 서브타이핑 - 발표](2020/object/13/README.md)
     * [사진](2020/object/13/undefined-1.md)
     * [실습](2020/object/13/undefined.md)
+  * [\#14 일관성 있는 협력](2020/object/14.md)
 * [Effective Java](2020/effective-java/README.md)
   * [\[1주차\] 1-6](2020/effective-java/1-1-9/README.md)
     * [발표 코드](2020/effective-java/1-1-9/undefined.md)

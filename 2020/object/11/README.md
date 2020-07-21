@@ -142,7 +142,7 @@ public class PersonalPlaylist {
 
 #### 기본정책과 부가정책 조합하기
 
-![](../../../.gitbook/assets/image%20%28135%29.png)
+![](../../../.gitbook/assets/image%20%28143%29.png)
 
 기본과 부가의 조합 경우의 수가 많을 것이다.
 
@@ -150,7 +150,7 @@ public class PersonalPlaylist {
 
 코드는 아래있다.
 
-![](../../../.gitbook/assets/image%20%28137%29.png)
+![](../../../.gitbook/assets/image%20%28145%29.png)
 
 #### 기본정책에 세금정책 조합하기
 
@@ -162,7 +162,7 @@ public class PersonalPlaylist {
 
 확장을 하다보니 위의 UML이 아래와 같이 변햇다..
 
-![](../../../.gitbook/assets/image%20%28130%29.png)
+![](../../../.gitbook/assets/image%20%28135%29.png)
 
 무리한 상속 \(코드는 두경우만 가져와봤다\)  
 Phone - RegularPhone - TaxableRegularPhone   
@@ -265,17 +265,17 @@ public class TaxableNightlyDiscountPhone extends NightlyDiscountPhone {
 
 코드는 맨아래 있다.
 
-![](../../../.gitbook/assets/image%20%28132%29.png)
+![](../../../.gitbook/assets/image%20%28139%29.png)
 
 #### 부가 정책 적용하기
 
-![](../../../.gitbook/assets/image%20%28136%29.png)
+![](../../../.gitbook/assets/image%20%28144%29.png)
 
 #### 기본 정책과 부가 정책 합성하기
 
 #### 새로운 정책 추가하기
 
-![](../../../.gitbook/assets/image%20%28134%29.png)
+![](../../../.gitbook/assets/image%20%28141%29.png)
 
 #### 객체 합성이 클래스 상속보다 더 좋은 방법이다.
 
@@ -304,9 +304,9 @@ public class TaxableNightlyDiscountPhone extends NightlyDiscountPhone {
 
 #### 부가 정책 트레이드 믹스인 하기
 
-![](../../../.gitbook/assets/image%20%28129%29.png)
+![](../../../.gitbook/assets/image%20%28131%29.png)
 
-![](../../../.gitbook/assets/image%20%28127%29.png)
+![](../../../.gitbook/assets/image%20%28128%29.png)
 
 #### 쌓을 수 있는 변경
 
