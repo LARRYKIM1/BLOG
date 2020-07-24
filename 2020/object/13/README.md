@@ -281,7 +281,7 @@ LSP는 OCP의 전제 조건이다.
 
 ### 타입 계층과 리스코프 치환 원칙
 
-잊지 말아야 하는 사실은 클래스 상속은 타입 계층을 구현할 수 있는 다양한 방법 중 하나일 뿐 이라는 것이다.
+잊지 말아야 하는 사실은 클래스 **상속은 타입 계층을 구현**할 수 있는 다양한 **방법 중 하나**일 뿐 이라는 것이다.
 
 마지막 질문만이 남았다. 클라이언트 관점에서 자식 클래스가 부모 클래스를 대체할 수 있다는 것은 무엇을 의미하는가? 클라이언트 관점에서 자식 클래스가 부모 클래스의 행동을 보존한다는 것은 무엇을 의미하는가?
 
@@ -293,11 +293,13 @@ LSP는 OCP의 전제 조건이다.
 
 * precondition 사전 조건 / postcondition 사후 조건 / class invariant 클래스 불변식
 
-각각 클라이언트가 정상적으로 메서드를 실행하기 위해 만족시켜야 하는것, 메서드가 실행된 후에 서버가 클라이언트에게 보장해야 하는것, 메서드 실행 전과 실행 후에 인스턴스가 만족시켜야 하는 클래스 불변식
+precondition 클라이언트가 정상적으로 메서드를 실행하기 위해 만족시켜야 하는것,   
+postcondition 메서드가 실행된 후에 서버가 클라이언트에게 보장해야 하는것,   
+class invariant 메서드 실행 전과 실행 후에 인스턴스가 만족시켜야 하는 클래스 불변식
 
 > 부록 설명 요약해 넣기
 
- 계약에 의한 설계를 사용하면 리스코프 치환 원칙이 강제하는 조건을 계약의 개념을 이용해 좀 더 명확하게 설명할 수 있다.
+ **계약에 의한 설계를 사용하면** 리스코프 치환 원칙이 강제하는 조건을 계약의 개념을 이용해 좀 더 명확하게 설명할 수 있다.
 
 > 서브타입이 리스코프 치환 원칙을 만족시키시 위해서는 클라이언트와 슈퍼타입 간에 체결된 계약을 준수해야 한다.
 
@@ -325,21 +327,20 @@ public abstract class DiscountPolicy {
 
 사전조건: calculateDiscountAmount의 screening에 null이 전달된다면 screening, getMovieFee\(\)가 실행될 때 NullPointerException 예외가 던져질 것이다. 따라서 단정문\(assertion\)을 사용해 사전조건을 다음과 같이 표현할 수 있다.
 
-```text
+```java
 assert screening != null && screening.getStartTime().isAfter(LocalDateTime.now());
 ```
 
 사후조건: calculateDiscountAmount 메서드의 반환값은 항상 null이 아니어야 한다. 추가로 반환되는 값은 청구되는 요금이기 때문에 최소한 0원보다는 커야 한다.
 
-```text
+```java
 assert amount != null && amount.isGreaterThanOrEqual(Money.ZERO);
 ```
 
-총코드
+두 조건 추가 코드 
 
 ```java
-​
-public abstract class DiscountPolicy {
+​public abstract class DiscountPolicy {
     public Money calculateDiscountAmount(Screening screening) {
         checkPrecondition(screening);
 ​
@@ -387,11 +388,45 @@ public class Movie {
 
 새로운 BrokenDiscountPolicy 추가 - 자정 넘어 시작하는 것은 예매 불가 사전조건 가짐.
 
-Movie가 오직 DiscountPolicy의 사전조건만 알고 있다는 점이 문제이다. Movie는 DiscountPolicy가 정의 하고 있는 사전조건을 만족시키기 위해 null이 아니면서 시작시간이 현재 시간 이후인 Screening을 전 달할 것이다. 따라서 자정이 지난 후에 종료되는 Screening을 전달하더라도 문제가 없다고 가정할 것 이다. 협력 실패. BrokenDiscountPolicy는 클라이언트의 관점에서 DiscountPolicy를 대체할 수 없기 때문에 서브타입이 아니다.
+```java
+public class BrokenDiscountPolicy extends DiscountPolicy {
 
-결론, 서브타입에 더 강력한 사전조건을 정의할 수 없다.
+    public BrokenDiscountPolicy(DiscountCondition... conditions) {
+        super(conditions);
+    }
 
-그럼 사전조건을 제거해서 약화시킨다면? 이경우는 상관없다.
+    @Override
+    public Money calculateDiscountAmount(Screening screening) {
+        checkPrecondition(screening);                 // 기존의 사전조건
+        checkStrongerPrecondition(screening);         // 더 강력한 사전조건
+
+        Money amount = screening.getMovieFee();
+        checkPostcondition(amount);                   // 기존의 사후조건
+        checkStrongerPostcondition(amount);           // 더 강력한 사후조건
+        return amount;
+    }
+
+    private void checkStrongerPrecondition(Screening screening) {
+        assert screening.getEndTime().toLocalTime()
+                .isBefore(LocalTime.MIDNIGHT);
+    }
+
+    private void checkStrongerPostcondition(Money amount) {
+        assert amount.isGreaterThanOrEqual(Money.wons(1000));
+    }
+
+    @Override
+    protected Money getDiscountAmount(Screening screening) {
+        return Money.ZERO;
+    }
+}
+```
+
+Movie가 오직 DiscountPolicy의 사전조건만 알고 있다는 점이 문제이다**. Movie는 DiscountPolicy가 정의 하고 있는 사전조건을 만족시키기 위해** null이 아니면서 시작시간이 현재 시간 이후인 **Screening을 전달**할 것이다. 따라서 자정이 지난 후에 종료되는 Screening을 전달하더라도 **문제가 없다고 가정**할 것 이다. **협력 실패**. **BrokenDiscountPolicy**는 클라이언트의 관점에서 **DiscountPolicy를 대체할 수 없기 때문**에 서브타입이 아니다.
+
+즉, 서브타입에 **더 강력한 사전조건을 정의할 수 없다.**
+
+그럼 사전조건을 제거해서 약화시킨다면? 이 경우는 상관없다.
 
 사후조건을 강화한다면 어떨까? 또한 상관없다.
 
@@ -402,7 +437,7 @@ private void checkStrongerPostcondition(Money amount) {
 }
 ```
 
-사후조건을 약하게 정의한다면? 문제가 된다...
+사후조건을 약하게 정의한다면? 문제가 된다... 마이너스 반환...
 
 ```java
 private void checkWeakerPostcondition(Money amount) {
