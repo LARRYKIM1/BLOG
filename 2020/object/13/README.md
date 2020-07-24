@@ -191,11 +191,11 @@ is-a관계와 행동호환성을 리스코프 치환 원칙을 통해 다시 한
 
 ## 4 리스코프 치환 원칙
 
-리스코프 따르면, 서브타이핑 관계를 만족시키기 위한 조건은 S형의 각 객체 이 에 대해 매의 객체 o2가 하나 있고, T에 의해 정의된 모든 프로그램 P에서 T가 드로 치환될 때, P의 동작이 변하지 않으면 S는 T의 서브타입이다. = 기반 타입에 대해 대체 가능하다.
+리스코프 따르면, 서브타이핑 관계를 만족시키기 위한 조건은 S형의 각 객체 o1에 대해 T형의 객체 o2가 하나 있고, T에 의해 정의된 모든 프로그램 P에서 T가 S로 치환될 때, P의 동작이 변하지 않으면 S는 T의 서브타입이다. **= 서브타입은 기반 타입에 대해 대체 가능하다.**
 
 예, Vector-Stack, Vector에 대해 기대하는 행동을 Stack에게는 기대 할 수 없다. 새-팽귄도 같음.
 
-전형 적인 위반 케이스
+전형적인 위반 케이스
 
 ```java
 public class Rectangle {
@@ -227,12 +227,12 @@ public class Square extends Rectangle {
     public Square(int x, int y, int size) {
         super(x, y, size, size);
     }
-    ©Override
+    @Override
         public void setWidth(int width) {
         super.setWidth(width);
         super.setHeight(width);
     }
-    ©Override
+    @Override
         public void setHeight(int height) {
         super.setwidth(height);
         super.setHeight(height);
@@ -243,17 +243,17 @@ public class Square extends Rectangle {
 // 직사각형의 너비와 높이를 서로 다르게 설정하도록 프로그래밍할 것이다
 public void resize(Rectangle rectangle, int width, int height) {
     rectangle.setWidth(width);
-        rectangle.setHeight(height);
-        assert rectangle.getWidth() == width && rectangle.getHeight() == height;
+    rectangle.setHeight(height);
+    assert rectangle.getWidth() == width && rectangle.getHeight() == height;
 }
 ​
-Square square = new Squared(10, 10, 10);
+Square square = new Square(10, 10, 10);
 resize(square, 50, 100); // 결과적으로 실패
 ```
 
-업캐스팅이 되어야 하지만 resize 관점에서 직사각형 대신 정사각형을 사용할 수 없다.
+업캐스팅이 되어야 하지만 resize 관점에서 직사각형 대신 정사각형을 **대체 사용할 수 없다.**
 
-is-a관계 뿐만 아니라 행동호환성도 중요하다는 것을 다시 깨달았다.
+is-a관계 뿐만 아니라 **행동호환성**도 중요하다는 것을 다시 깨달았다.
 
 #### 클라이언트와 대체 가능성
 
@@ -265,19 +265,19 @@ is-a관계 뿐만 아니라 행동호환성도 중요하다는 것을 다시 깨
 
 #### 리스코프 치환 원칙은 유연한 설계의 기반이다
 
-클라이언트의 코드를 변경하지 않고도 새로운 자식 클래스와 협력할 수 있다. 아래 Overlapped 정책 추가.
+클라이언트의 코드를 변경하지 않고도 새로운 자식 클래스와 협력할 수 있다. 아래 **Overlapped 정책 추가.**
 
 ![1](https://gblobscdn.gitbook.com/assets%2F-M7KQQ2ZLP5HVNbeQNZi%2F-MCVPgQetWh6XYWevMB7%2F-MCVPtBlU-5G1mVY15Q0%2Fimage.png?alt=media&token=e85bc1cb-bb0c-4e83-946b-77aa4c64dbee)
 
 또한, 위 설계는 의존성 역전 원칙과 개방-폐쇄 원칙, 리스코프 치환원칙이 한데 어우러져 설계를 확장하게 만든 예이다.
 
-문제 - DIP, OCP, LIP가 어디 있는지 설명해보자.
+문제 - DIP, OCP, LSP가 어디 있는지 설명해보자.
 
-* DIP: 상위 수준의 모듈인 Movie와 하위 수준의 모듈인 OverlappedDiscountPolicy는 모두 추상 클래스인 Discount Policy에 의존한다.
-* LIP: Discountpolicy 대신 OverlappedDiscountPolicy와 협력하더라도 아무런 문제가 없다. 다시 말해서 OverlappedDiscountPolicy는 클라이언트에 대한 영향 없이도 DiscountPolicy를 대체할 수 있다.
+* DIP: 상위 수준의 모듈인 Movie와 하위 수준의 모듈인 OverlappedDiscountPolicy는 모두 추상 클래스인 DiscountPolicy에 의존한다.
+* LSP: Discountpolicy 대신 OverlappedDiscountPolicy와 협력하더라도 아무런 문제가 없다. 다시 말해서 OverlappedDiscountPolicy는 클라이언트에 대한 영향 없이도 DiscountPolicy를 대체할 수 있다.
 * OCP: 중복 할인 정책이라는 새로운 기능을 추가하기 위해 DiscountPolicy의 자식 클래스인 OverlappedDiscountPolicy를 추가하더라도 Movie에는 영향을 끼치지 않는다. 다시 말해서 기능 확장을 하면서 기존 코드를 수정할 필요는 없다.
 
-LIP는 OCP의 전제 조건이다.
+LSP는 OCP의 전제 조건이다.
 
 ### 타입 계층과 리스코프 치환 원칙
 
