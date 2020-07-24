@@ -89,7 +89,7 @@ description: '조영호 저 "오브젝트: 코드로 이해하는 객체지향 �
 
  is-a 관계만 초점을 맞출경우 - 펭귄은 새다. 새는 날수 있다. 자식클래스가 부모클래스 대체 안되는 문제 \(행동호환성\).
 
-```text
+```java
 public class Bird {
     public void fly() { ... }
 }
@@ -152,7 +152,7 @@ public void flyBird(FlyingBird bird) {
 >
 > Stack과 Vector가 서브타이핑 관계가 아니라 서브클래싱 관계인 이유도 마찬가지다. Stack과 Vector가 리스코프 치환 원칙을 위반하는 가장 큰 이유는 상속으로 인해 Stack에 포함돼서는 안 되는 Vector의 퍼블릭 인터페이스가 Stack의 퍼블릭 인터페이스에 포함됐기 때문이다. Stack의 행동은 Vector의 행동과 호환되지 않는다
 >
-> ```text
+> ```java
 > Stack<String> stack = new Stack<>();
 > stack.push("1st");
 > stack.push("2nd");
@@ -183,7 +183,7 @@ is-a관계와 행동호환성을 리스코프 치환 원칙을 통해 다시 한
 
 전형 적인 위반 케이스
 
-```text
+```java
 public class Rectangle {
     private int x, y, width, height;
     public Rectangle(int x, int y, int width, int height) {
@@ -289,7 +289,7 @@ LIP는 OCP의 전제 조건이다.
 
 영화와 정책 사이 암묵적인 사전조건과 사후조건이 존재한다.
 
-```text
+```java
 public class Movie {
     public Money calculateMovieFee(Screening screening) {
         return fee.minus(discountPolicy.calculateDiscountAmount(screening));
@@ -323,7 +323,7 @@ assert amount != null && amount.isGreaterThanOrEqual(Money.ZERO);
 
 총코드
 
-```text
+```java
 ​
 public abstract class DiscountPolicy {
     public Money calculateDiscountAmount(Screening screening) {
@@ -356,7 +356,7 @@ public abstract class DiscountPolicy {
 
 Movie가 지켜야할 사전 조건 추가한다. calculateDiscountAmount 메서드가 정의한 사전조건을 만족시키는 것은 Movie의 책임이다. 위반하는 screening을 전달해서는 안 된다.
 
-```text
+```java
 public class Movie {
     public Money calculateMovieFee(Screening screening) {
         if (screening == null || screening.getStartTime().isBefore(LocalDateTime.now())) {
@@ -381,7 +381,7 @@ Movie가 오직 DiscountPolicy의 사전조건만 알고 있다는 점이 문제
 
 사후조건을 강화한다면 어떨까? 또한 상관없다.
 
-```text
+```java
 // 클라이언트는 0원 이상만 받환 받으면 된다.
 private void checkStrongerPostcondition(Money amount) {
     assert amount.isGreaterThanOrEqual(Money.wons(1000));
@@ -390,7 +390,7 @@ private void checkStrongerPostcondition(Money amount) {
 
 사후조건을 약하게 정의한다면? 문제가 된다...
 
-```text
+```java
 private void checkWeakerPostcondition(Money amount) {
     assert amount != null;
 }
