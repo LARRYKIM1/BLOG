@@ -27,6 +27,7 @@
   * [\#14 일관성 있는 협력](2020/object/14.md)
   * [\#15장 디자인패턴과 프레임워크](2020/object/15.md)
 * [Effective Java](2020/effective-java/README.md)
+  * [\[6주차\] 37-44](2020/effective-java/6-37-44.md)
   * [\[1주차\] 1-6](2020/effective-java/1-1-9/README.md)
     * [발표 코드](2020/effective-java/1-1-9/undefined.md)
   * [\[2주차\] 7-14](2020/effective-java/2-7-14.md)
