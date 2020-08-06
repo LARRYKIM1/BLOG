@@ -101,6 +101,7 @@
   * [\# 2장 동작 파라미터화로 코드 넘기기](it/modern-java-in-action/2.md)
   * [\# 3장 람다 표현식](it/modern-java-in-action/3.md)
   * [\# 4장스트림 소개](it/modern-java-in-action/untitled.md)
+  * [\# 5장 스트림 활용](it/modern-java-in-action/5.md)
 * [Pro Git](it/pro-git/README.md)
   * [Untitled](it/pro-git/untitled.md)
 * [Effective Java](it/effective-java/README.md)
